@@ -1,6 +1,6 @@
 # WyRand-rs
 
-A Fast & portable non-cryptographic pseudorandom number generator.
+A fast & portable non-cryptographic pseudorandom number generator written in Rust.
 
 The implementation is based on [wyhash](https://github.com/wangyi-fudan/wyhash), a simple and fast hasher but **not** cryptographically secure. It's known to be extremely fast and performant while still having great statistical properties.
 

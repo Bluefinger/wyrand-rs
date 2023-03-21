@@ -10,7 +10,7 @@ use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng};
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-/// A Pseudorandom Number generator, powered by the `WyRand` algorithm.
+/// A Pseudorandom Number generator, powered by the `wyrand` algorithm.
 #[derive(Clone, PartialEq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct WyRand {
