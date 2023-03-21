@@ -30,11 +30,8 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-test-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}
-      - name: rust-toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          default: ${{ matrix.rust }}
+      - name: Install Rust
+        run: rustup update ${{ matrix.rust }} --no-self-update && rustup default ${{ matrix.rust }}
       - name: Run cargo check
         run: cargo check --all --all-features --all-targets
         if: startsWith(matrix.rust, 'nightly')
@@ -62,11 +59,8 @@ jobs:
         run: |
           msrv=`cargo metadata --no-deps --format-version 1 | jq --raw-output '.packages[] | select(.name=="wyrand") | .rust_version'`
           echo "MSRV=$msrv" >> $GITHUB_ENV
-      - name: rust-toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ env.MSRV }}
-          default: ${{ env.MSRV }}
+      - name: Install Rust
+        run: rustup update ${{ env.MSRV }} --no-self-update && rustup default ${{ env.MSRV }}
       - name: Run cargo check
         id: check
         run: cargo check --all-features
