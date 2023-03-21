@@ -1,0 +1,30 @@
+[package]
+name = "wyrand"
+version = "0.1.0"
+edition = "2021"
+authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
+description = "A fast & portable non-cryptographic pseudorandom number generator"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/Bluefinger/wyrand-rs"
+keywords = ["fast", "rand", "random", "wyrand"]
+categories = ["algorithms", "no-std"]
+exclude = ["/.*"]
+resolver = "2"
+
+[features]
+debug = []
+default = ["rand_core", "debug"]
+rand_core = ["dep:rand_core"]
+serde1 = ["dep:serde"]
+
+[dependencies]
+rand_core = { version = "0.6", default-features = false, optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[dev-dependencies]
+criterion = "0.4"
+serde_test = "1.0"
+
+[[bench]]
+name = "rand_bench"
+harness = false
