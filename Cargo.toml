@@ -10,6 +10,7 @@ keywords = ["fast", "rand", "random", "wyrand"]
 categories = ["algorithms", "no-std"]
 exclude = ["/.*"]
 resolver = "2"
+rust-version = "1.56.0"
 
 [features]
 debug = []
