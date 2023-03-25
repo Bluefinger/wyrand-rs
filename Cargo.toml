@@ -1,6 +1,6 @@
 [package]
 name = "wyrand"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
 description = "A fast & portable non-cryptographic pseudorandom number generator"
@@ -15,6 +15,7 @@ rust-version = "1.60.0"
 [features]
 debug = []
 default = ["rand_core", "debug"]
+hash = []
 rand_core = ["dep:rand_core"]
 serde1 = ["dep:serde"]
 

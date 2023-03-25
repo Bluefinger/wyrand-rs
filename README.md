@@ -1,5 +1,10 @@
 # WyRand-rs
 
+[![CI](https://github.com/Bluefinger/wyrand-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/Bluefinger/wyrand-rs/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue.svg)](https://github.com/Bluefinger/wyrand-rs)
+[![Cargo](https://img.shields.io/crates/v/wyrand.svg)](https://crates.io/crates/wyrand)
+[![Documentation](https://docs.rs/wyrand/badge.svg)](https://docs.rs/wyrand)
+
 A fast & portable non-cryptographic pseudorandom number generator written in Rust.
 
 The implementation is based on [wyhash](https://github.com/wangyi-fudan/wyhash), a simple and fast hasher but **not** cryptographically secure. It's known to be extremely fast and performant while still having great statistical properties.
@@ -26,6 +31,7 @@ The  crate will always export `WyRand` and will do so when set as `default-featu
 - **`rand_core`** - Enables support for `rand_core`, implementing `RngCore` & `SeedableRng` on `WyRand`.
 - **`debug`** - Enables `core::fmt::Debug` implementation for `WyRand`.
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
+- **`hash`** - Enables `core::hash::Hash` implementation for [`WyRand`].
 
 ## License
 

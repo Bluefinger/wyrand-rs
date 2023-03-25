@@ -30,7 +30,8 @@
 //!   `SeedableRng` on [`WyRand`].
 //! * **`debug`** - Enables [`core::fmt::Debug`] implementation for [`WyRand`].
 //! * **`serde1`** - Enables `Serialize` and `Deserialize` derives on [`WyRand`].
-#![warn(missing_docs)]
+//! * **`hash`** - Enables [`core::hash::Hash`] implementation for [`WyRand`].
+#![warn(missing_docs, rust_2018_idioms)]
 #![no_std]
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
@@ -42,8 +43,9 @@ use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 /// A Pseudorandom Number generator, powered by the `wyrand` algorithm.
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "hash", derive(Hash))]
 #[repr(transparent)]
 pub struct WyRand {
     state: u64,
@@ -121,7 +123,11 @@ mod tests {
     fn no_leaking_debug() {
         let rng = WyRand::new(Default::default());
 
-        assert_eq!(format!("{rng:?}"), "WyRand");
+        assert_eq!(
+            format!("{rng:?}"),
+            "WyRand",
+            "Debug should not be leaking internal state"
+        );
     }
 
     #[test]
@@ -148,8 +154,6 @@ mod tests {
     #[cfg(feature = "rand_core")]
     #[test]
     fn rand_core_integration() {
-        let mut rng = WyRand::from_seed(Default::default());
-
         fn rand_generic<R: RngCore>(mut r: R) -> u32 {
             r.next_u32()
         }
@@ -158,8 +162,10 @@ mod tests {
             r.next_u32()
         }
 
-        assert_eq!(rand_generic(&mut rng), 2405016974);
-        assert_eq!(rand_dyn(&mut rng), 4283336045);
+        let mut rng = WyRand::from_seed(Default::default());
+
+        assert_eq!(rand_generic(&mut rng), 2_405_016_974);
+        assert_eq!(rand_dyn(&mut rng), 4_283_336_045);
     }
 
     #[cfg(all(feature = "serde1", feature = "debug"))]
@@ -182,5 +188,25 @@ mod tests {
                 Token::StructEnd,
             ],
         );
+    }
+
+    #[cfg(feature = "hash")]
+    #[allow(deprecated)]
+    #[test]
+    fn hash() {
+        use core::hash::{Hash, Hasher, SipHasher};
+
+        let rng = WyRand::new(123);
+        let state: u64 = 123;
+
+        let mut hasher = SipHasher::default();
+        rng.hash(&mut hasher);
+        let hashed_rng = hasher.finish();
+
+        let mut hasher = SipHasher::default();
+        state.hash(&mut hasher);
+        let hashed_state = hasher.finish();
+
+        assert_eq!(hashed_rng, hashed_state);
     }
 }
