@@ -32,7 +32,7 @@ The  crate will always export `WyRand` and will do so when set as `default-featu
 - **`rand_core`** - Enables support for `rand_core`, implementing `RngCore` & `SeedableRng` on `WyRand`.
 - **`debug`** - Enables `core::fmt::Debug` implementation for `WyRand`.
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
-- **`hash`** - Enables `core::hash::Hash` implementation for [`WyRand`].
+- **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
 - **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
 
 ## License
