@@ -5,11 +5,12 @@
 [![Cargo](https://img.shields.io/crates/v/wyrand.svg)](https://crates.io/crates/wyrand)
 [![Documentation](https://docs.rs/wyrand/badge.svg)](https://docs.rs/wyrand)
 
-A fast & portable non-cryptographic pseudorandom number generator written in Rust.
+A fast & portable non-cryptographic pseudorandom number generator written in Rust, and optionally,
+the hashing algorithm as well.
 
-The implementation is based on [wyhash](https://github.com/wangyi-fudan/wyhash), a simple and fast hasher but **not** cryptographically secure. It's known to be extremely fast and performant while still having great statistical properties.
+The implementations for both the PRNG and hasher are based on the final v4 C implementation [wyhash](https://github.com/wangyi-fudan/wyhash), a simple and fast hasher but **not** cryptographically secure. It's known to be extremely fast and performant while still having great statistical properties.
 
-This crate can be used on its own or be integrated with `rand_core`/`rand`, and it is `no-std` compatible. Minimum compatible Rust version is 1.60.
+This crate can be used on its own or be integrated with `rand_core`/`rand`, and it is `no-std` compatible. Minimum compatible Rust version is 1.60. This crate is also implemented with no unsafe code via `#![forbid(unsafe_code)]`.
 
 ## Example
 
@@ -32,6 +33,7 @@ The  crate will always export `WyRand` and will do so when set as `default-featu
 - **`debug`** - Enables `core::fmt::Debug` implementation for `WyRand`.
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
 - **`hash`** - Enables `core::hash::Hash` implementation for [`WyRand`].
+- **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
 
 ## License
 

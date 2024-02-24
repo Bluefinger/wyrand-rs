@@ -18,6 +18,7 @@ default = ["rand_core", "debug"]
 hash = []
 rand_core = ["dep:rand_core"]
 serde1 = ["dep:serde"]
+wyhash = []
 
 [dependencies]
 rand_core = { version = "0.6", default-features = false, optional = true }
