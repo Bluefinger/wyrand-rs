@@ -1,8 +1,9 @@
 use criterion::{black_box, criterion_main, Criterion};
-use rand_core::RngCore;
-use wyrand::WyRand;
 
 fn wyrand_benchmark(c: &mut Criterion) {
+    use rand_core::RngCore;
+    use wyrand::WyRand;
+
     c.bench_function("rand", |b| {
         let mut rng = WyRand::new(123456);
 
@@ -34,6 +35,7 @@ fn wyrand_benchmark(c: &mut Criterion) {
 fn wyhash_benchmark(c: &mut Criterion) {
     use std::hash::Hasher;
 
+    use criterion::BenchmarkId;
     use wyrand::WyHash;
 
     let test_cases: [&str; 7] = [
@@ -50,15 +52,19 @@ fn wyhash_benchmark(c: &mut Criterion) {
         .into_iter()
         .enumerate()
         .for_each(|(seed, input)| {
-            c.bench_function(&format!("Hash message of length: {}", input.len()), |b| {
-                b.iter(|| {
-                    let mut hasher = WyHash::new_with_default_secret(black_box(seed as u64));
+            c.bench_with_input(
+                BenchmarkId::new("Hash message of length", input.len()),
+                &input.as_bytes(),
+                |b, &input| {
+                    b.iter(|| {
+                        let mut hasher = WyHash::new_with_default_secret(black_box(seed as u64));
 
-                    hasher.write(black_box(input.as_bytes()));
+                        hasher.write(input);
 
-                    hasher.finish()
-                });
-            });
+                        hasher.finish()
+                    });
+                },
+            );
         });
 }
 
