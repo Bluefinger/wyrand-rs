@@ -1,9 +1,9 @@
 [package]
 name = "wyrand"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
-description = "A fast & portable non-cryptographic pseudorandom number generator"
+description = "A fast & portable non-cryptographic pseudorandom number generator and hashing algorithm"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/Bluefinger/wyrand-rs"
 keywords = ["fast", "rand", "random", "wyrand"]
@@ -18,6 +18,7 @@ default = ["rand_core", "debug"]
 hash = []
 rand_core = ["dep:rand_core"]
 serde1 = ["dep:serde"]
+wyhash = []
 
 [dependencies]
 rand_core = { version = "0.6", default-features = false, optional = true }
