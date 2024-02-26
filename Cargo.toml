@@ -22,7 +22,7 @@ wyhash = []
 v4_2 = []
 
 [dependencies]
-rand_core = { version = "0.6", default-features = false, optional = true }
+rand_core = { version = "=0.9.0-alpha.0", default-features = false, optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
