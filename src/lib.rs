@@ -38,8 +38,8 @@
 mod constants;
 #[cfg(feature = "wyhash")]
 mod hasher;
-mod utils;
 mod rand;
+mod utils;
 
 #[cfg(feature = "wyhash")]
 pub use hasher::WyHash;

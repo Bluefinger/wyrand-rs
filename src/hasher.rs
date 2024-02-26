@@ -12,7 +12,7 @@ use crate::{
 };
 
 use self::{
-    read::{wyread32, wyread64, wyread_upto_24},
+    read::{is_over_48_bytes, wyread32, wyread64, wyread_upto_24},
     secret::make_secret,
 };
 
@@ -22,32 +22,32 @@ use self::{
 #[derive(Clone)]
 pub struct WyHash {
     seed: u64,
-    first: u64,
-    second: u64,
+    lo: u64,
+    hi: u64,
     size: u64,
     secret: [u64; 4],
 }
 
 impl WyHash {
-    /// Create hasher with a seed and a secret
-    pub fn new(seed: u64, secret_seed: u64) -> Self {
+    /// Create hasher with a seed and a newly generated secret
+    pub const fn new(seed: u64, secret_seed: u64) -> Self {
         Self::new_with_secret(seed, make_secret(secret_seed))
     }
 
-    /// Create hasher with a seed and the default secrets
+    /// Create hasher with a seed and default secrets
     #[inline]
-    pub fn new_with_default_secret(seed: u64) -> Self {
+    pub const fn new_with_default_secret(seed: u64) -> Self {
         Self::new_with_secret(seed, [WY0, WY1, WY2, WY3])
     }
 
     #[inline]
-    fn new_with_secret(mut seed: u64, secret: [u64; 4]) -> Self {
+    const fn new_with_secret(mut seed: u64, secret: [u64; 4]) -> Self {
         seed ^= wymix(seed ^ secret[0], secret[1]);
 
         WyHash {
             seed,
-            first: 0,
-            second: 0,
+            lo: 0,
+            hi: 0,
             size: 0,
             secret,
         }
@@ -55,31 +55,31 @@ impl WyHash {
 
     #[inline]
     fn consume_bytes(&mut self, bytes: &[u8]) {
-        let (first, second): (u64, u64);
+        let (lo, hi): (u64, u64);
         let length = bytes.len();
         let mut seed = self.seed;
 
         match length {
             4..=16 => {
-                first = (wyread32(bytes) << 32) | wyread32(&bytes[((length >> 3) << 2)..]);
-                second = (wyread32(&bytes[(length - 4)..]) << 32)
+                lo = (wyread32(bytes) << 32) | wyread32(&bytes[((length >> 3) << 2)..]);
+                hi = (wyread32(&bytes[(length - 4)..]) << 32)
                     | wyread32(&bytes[(length - 4 - ((length >> 3) << 2))..]);
             }
             1..=3 => {
-                first = wyread_upto_24(bytes);
-                second = 0;
+                lo = wyread_upto_24(bytes);
+                hi = 0;
             }
             0 => {
-                first = 0;
-                second = 0;
+                lo = 0;
+                hi = 0;
             }
             _ => {
                 let mut index = length;
                 let mut start = 0;
-                if length > 48 {
+                if is_over_48_bytes(length) {
                     let mut seed1 = seed;
                     let mut seed2 = seed;
-                    while index > 48 {
+                    while is_over_48_bytes(index) {
                         seed = wymix(
                             wyread64(&bytes[start..]) ^ self.secret[1],
                             wyread64(&bytes[start + 8..]) ^ seed,
@@ -107,13 +107,13 @@ impl WyHash {
                     start += 16
                 }
 
-                first = wyread64(&bytes[(length - 16)..]);
-                second = wyread64(&bytes[(length - 8)..]);
+                lo = wyread64(&bytes[(length - 16)..]);
+                hi = wyread64(&bytes[(length - 8)..]);
             }
         }
 
-        self.first = first;
-        self.second = second;
+        self.lo = lo;
+        self.hi = hi;
         self.seed = seed;
         self.size += length as u64;
     }
@@ -129,8 +129,8 @@ impl Hasher for WyHash {
 
     #[inline]
     fn finish(&self) -> u64 {
-        let (first, second) = wymul(self.first ^ self.secret[1], self.second ^ self.seed);
-        wymix(first ^ self.secret[0] ^ self.size, second ^ self.secret[1])
+        let (lo, hi) = wymul(self.lo ^ self.secret[1], self.hi ^ self.seed);
+        wymix(lo ^ self.secret[0] ^ self.size, hi ^ self.secret[1])
     }
 }
 
@@ -170,8 +170,22 @@ mod tests {
     }
 
     #[test]
-    fn expected_v4_hasher_output() {
+    fn expected_hasher_output() {
         // Test cases generated from the C reference's test_vectors
+        #[cfg(feature = "v4_2")]
+        #[rustfmt::skip]
+        let test_cases: [(u64, &str); 8] = [
+            (0x9322_8a4d_e0ee_c5a2, ""),
+            (0xc5ba_c3db_1787_13c4, "a"),
+            (0xa97f_2f7b_1d9b_3314, "abc"),
+            (0x786d_1f1d_f380_1df4, "message digest"),
+            (0xdca5_a813_8ad3_7c87, "abcdefghijklmnopqrstuvwxyz"),
+            (0xb9e7_34f1_17cf_af70, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"),
+            (0x6cc5_eab4_9a92_d617, "12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+            (0xe1d4_c58d_97ba_df5e, "123456789012345678901234567890123456789012345678")
+        ];
+
+        #[cfg(not(feature = "v4_2"))]
         #[rustfmt::skip]
         let test_cases: [(u64, &str); 8] = [
             (0x0409_638e_e2bd_e459, ""),
@@ -181,7 +195,7 @@ mod tests {
             (0x7a43_afb6_1d7f_5f40, "abcdefghijklmnopqrstuvwxyz"),
             (0xff42_329b_90e5_0d58, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"),
             (0xc39c_ab13_b115_aad3, "12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
-            (0x21dc_4142_8fc5_4701, "1234567890"),
+            (0xe44a_846b_fc65_00cd, "123456789012345678901234567890123456789012345678")
         ];
 
         test_cases

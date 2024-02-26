@@ -24,3 +24,15 @@ pub(super) fn wyread_upto_24(bits: &[u8]) -> u64 {
         | u64::from(bits[bits.len() >> 1]) << 8
         | u64::from(bits[bits.len() - 1])
 }
+
+#[inline(always)]
+pub(super) fn is_over_48_bytes(length: usize) -> bool {
+    #[cfg(feature = "v4_2")]
+    {
+        length >= 48
+    }
+    #[cfg(not(feature = "v4_2"))]
+    {
+        length > 48
+    }
+}

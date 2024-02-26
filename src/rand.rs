@@ -5,9 +5,9 @@ use crate::constants::{WY0, WY1};
 #[cfg(feature = "rand_core")]
 use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng};
 
+use crate::utils::wymix;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
-use crate::utils::wymix;
 
 /// A Pseudorandom Number generator, powered by the `wyrand` algorithm.
 #[derive(Clone, PartialEq, Eq)]
@@ -31,8 +31,28 @@ impl WyRand {
     /// Generates a random [`u64`] value and advances the PRNG state.
     #[inline]
     pub fn rand(&mut self) -> u64 {
-        self.state = self.state.wrapping_add(WY0);
-        wymix(self.state, self.state ^ WY1)
+        let (value, state) = Self::gen_u64(self.state);
+        self.state = state;
+        value
+    }
+
+    /// Const [`WyRand`] generator. Generates and return a random [`u64`] value first
+    /// and then the advanced state second.
+    /// ```
+    /// use wyrand::WyRand;
+    ///
+    /// let seed = 123;
+    ///
+    /// let (random_value, new_state) = WyRand::gen_u64(seed);
+    ///
+    /// assert_ne!(random_value, 0);
+    /// // The original seed now no longer matches the new state.
+    /// assert_ne!(new_state, seed);
+    /// ```
+    #[inline(always)]
+    pub const fn gen_u64(mut seed: u64) -> (u64, u64) {
+        seed = seed.wrapping_add(WY0);
+        (wymix(seed, seed ^ WY1), seed)
     }
 }
 
@@ -130,8 +150,16 @@ mod tests {
 
         let mut rng = WyRand::from_seed(Default::default());
 
-        assert_eq!(rand_generic(&mut rng), 2_405_016_974);
-        assert_eq!(rand_dyn(&mut rng), 4_283_336_045);
+        #[cfg(not(feature = "v4_2"))]
+        {
+            assert_eq!(rand_generic(&mut rng), 2_405_016_974);
+            assert_eq!(rand_dyn(&mut rng), 4_283_336_045);
+        }
+        #[cfg(feature = "v4_2")]
+        {
+            assert_eq!(rand_generic(&mut rng), 2_371_481_814);
+            assert_eq!(rand_dyn(&mut rng), 412_509_173);
+        }
     }
 
     #[cfg(all(feature = "serde1", feature = "debug"))]
