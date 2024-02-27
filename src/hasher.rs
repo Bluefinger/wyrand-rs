@@ -1,5 +1,7 @@
 mod read;
 mod secret;
+#[cfg(feature = "v4_2")]
+mod primes;
 
 use core::hash::Hasher;
 

@@ -36,7 +36,7 @@ impl WyRand {
         value
     }
 
-    /// Const [`WyRand`] generator. Generates and return a random [`u64`] value first
+    /// Const [`WyRand`] generator. Generates and returns a random [`u64`] value first
     /// and then the advanced state second.
     /// ```
     /// use wyrand::WyRand;
