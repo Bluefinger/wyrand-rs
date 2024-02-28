@@ -1,26 +1,38 @@
 #[inline(always)]
-pub(super) fn wyread64(bits: &[u8]) -> u64 {
-    u64::from(bits[7]) << 56
-        | u64::from(bits[6]) << 48
-        | u64::from(bits[5]) << 40
-        | u64::from(bits[4]) << 32
-        | u64::from(bits[3]) << 24
-        | u64::from(bits[2]) << 16
-        | u64::from(bits[1]) << 8
-        | u64::from(bits[0])
+pub(super) const fn wyread64(bits: &[u8]) -> u64 {
+    (bits[7] as u64) << 56
+        | (bits[6] as u64) << 48
+        | (bits[5] as u64) << 40
+        | (bits[4] as u64) << 32
+        | (bits[3] as u64) << 24
+        | (bits[2] as u64) << 16
+        | (bits[1] as u64) << 8
+        | (bits[0] as u64)
 }
 
 #[inline(always)]
-pub(super) fn wyread32(bits: &[u8]) -> u64 {
-    u64::from(bits[3]) << 24
-        | u64::from(bits[2]) << 16
-        | u64::from(bits[1]) << 8
-        | u64::from(bits[0])
+pub(super) const fn wyread32(bits: &[u8]) -> u64 {
+    (bits[3] as u64) << 24
+        | (bits[2] as u64) << 16
+        | (bits[1] as u64) << 8
+        | (bits[0] as u64)
 }
 
 #[inline(always)]
-pub(super) fn wyread_upto_24(bits: &[u8]) -> u64 {
-    u64::from(bits[0]) << 16
-        | u64::from(bits[bits.len() >> 1]) << 8
-        | u64::from(bits[bits.len() - 1])
+pub(super) const fn wyread_upto_24(bits: &[u8]) -> u64 {
+    (bits[0] as u64) << 16
+        | (bits[bits.len() >> 1] as u64) << 8
+        | (bits[bits.len() - 1] as u64)
+}
+
+#[inline(always)]
+pub(super) const fn is_over_48_bytes(length: usize) -> bool {
+    #[cfg(feature = "v4_2")]
+    {
+        length >= 48
+    }
+    #[cfg(not(feature = "v4_2"))]
+    {
+        length > 48
+    }
 }

@@ -5,10 +5,11 @@
 [![Cargo](https://img.shields.io/crates/v/wyrand.svg)](https://crates.io/crates/wyrand)
 [![Documentation](https://docs.rs/wyrand/badge.svg)](https://docs.rs/wyrand)
 
-A fast & portable non-cryptographic pseudorandom number generator written in Rust, and optionally,
-the hashing algorithm as well.
+A fast & portable non-cryptographic pseudorandom number generator written in Rust, and optionally, the hashing algorithm as well.
 
-The implementations for both the PRNG and hasher are based on the final v4 C implementation [wyhash](https://github.com/wangyi-fudan/wyhash), a simple and fast hasher but **not** cryptographically secure. It's known to be extremely fast and performant while still having great statistical properties.
+The implementations for both the PRNG and hasher are based on the C reference implementation [wyhash](https://github.com/wangyi-fudan/wyhash), a simple and fast hasher but **not** cryptographically secure. It's known to be extremely fast and performant while still having great statistical properties.
+
+This crate provides both the v4.2 final implementation of the WyRand/WyHash algorithm, or the older final v4 implementation. The two versions have different outputs due to changes in the algorithm and also with the constants used. Currently by default, the older final v4 algorithm will be used. In the future, this will be changed to the newer algorithm to be the default, but the old implementation will remain for backwards compatibility reasons.
 
 This crate can be used on its own or be integrated with `rand_core`/`rand`, and it is `no-std` compatible. Minimum compatible Rust version is 1.60. This crate is also implemented with no unsafe code via `#![forbid(unsafe_code)]`.
 
@@ -27,13 +28,14 @@ let value = rng.rand();
 
 ## Features
 
-The  crate will always export `WyRand` and will do so when set as `default-features = false` in the Cargo.toml. By default, it will have the `rand_core` & `debug` features enabled.
+The crate will always export `WyRand` and will do so when set as `default-features = false` in the Cargo.toml. By default, it will have the `rand_core`, `debug` features enabled.
 
 - **`rand_core`** - Enables support for `rand_core`, implementing `RngCore` & `SeedableRng` on `WyRand`.
-- **`debug`** - Enables `core::fmt::Debug` implementation for `WyRand`.
+- **`debug`** - Enables `core::fmt::Debug` implementation for `WyRand`/`WyHash`.
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
 - **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
 - **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
+- **`v4_2`** - Switches the PRNG/Hashing algorithms to use the final v4.2 implementation.
 
 ## License
 
