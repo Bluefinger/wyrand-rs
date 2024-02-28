@@ -35,7 +35,7 @@ The crate will always export `WyRand` and will do so when set as `default-featur
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
 - **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
 - **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
-- **`v4_2`** - Switches the PRNG/Hashing algorithms to use the final v4.2 implementation. On by default.
+- **`v4_2`** - Switches the PRNG/Hashing algorithms to use the final v4.2 implementation. On by default. To force the algorithm to be the old final v4 one, you need to set `default-features = false`.
 
 ## License
 
