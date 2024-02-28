@@ -171,23 +171,10 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "v4_2"))]
     #[test]
-    fn expected_hasher_output() {
+    fn expected_final_v4_hasher_output() {
         // Test cases generated from the C reference's test_vectors
-        #[cfg(feature = "v4_2")]
-        #[rustfmt::skip]
-        let test_cases: [(u64, &str); 8] = [
-            (0x9322_8a4d_e0ee_c5a2, ""),
-            (0xc5ba_c3db_1787_13c4, "a"),
-            (0xa97f_2f7b_1d9b_3314, "abc"),
-            (0x786d_1f1d_f380_1df4, "message digest"),
-            (0xdca5_a813_8ad3_7c87, "abcdefghijklmnopqrstuvwxyz"),
-            (0xb9e7_34f1_17cf_af70, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"),
-            (0x6cc5_eab4_9a92_d617, "12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
-            (0xe1d4_c58d_97ba_df5e, "123456789012345678901234567890123456789012345678")
-        ];
-
-        #[cfg(not(feature = "v4_2"))]
         #[rustfmt::skip]
         let test_cases: [(u64, &str); 8] = [
             (0x0409_638e_e2bd_e459, ""),
@@ -198,6 +185,41 @@ mod tests {
             (0xff42_329b_90e5_0d58, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"),
             (0xc39c_ab13_b115_aad3, "12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
             (0xe44a_846b_fc65_00cd, "123456789012345678901234567890123456789012345678")
+        ];
+
+        test_cases
+            .into_iter()
+            .enumerate()
+            .map(|(seed, (expected, input))| {
+                let mut hasher = WyHash::new_with_secret(seed as u64, [WY0, WY1, WY2, WY3]);
+
+                hasher.write(input.as_bytes());
+
+                (input, expected, hasher.finish())
+            })
+            .for_each(|(input, expected_hash, computed_hash)| {
+                assert_eq!(
+                    expected_hash, computed_hash,
+                    "Hashed output didn't match expected for \"{}\"",
+                    input
+                );
+            });
+    }
+
+    #[cfg(feature = "v4_2")]
+    #[test]
+    fn expected_final_v42_hasher_output() {
+        // Test cases generated from the C reference's test_vectors
+        #[rustfmt::skip]
+        let test_cases: [(u64, &str); 8] = [
+            (0x9322_8a4d_e0ee_c5a2, ""),
+            (0xc5ba_c3db_1787_13c4, "a"),
+            (0xa97f_2f7b_1d9b_3314, "abc"),
+            (0x786d_1f1d_f380_1df4, "message digest"),
+            (0xdca5_a813_8ad3_7c87, "abcdefghijklmnopqrstuvwxyz"),
+            (0xb9e7_34f1_17cf_af70, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"),
+            (0x6cc5_eab4_9a92_d617, "12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+            (0xe1d4_c58d_97ba_df5e, "123456789012345678901234567890123456789012345678")
         ];
 
         test_cases

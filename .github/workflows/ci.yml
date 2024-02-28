@@ -41,7 +41,7 @@ jobs:
       - name: Full feature + v4.2 testing
         run: cargo test --all-features
       - name: v4 compatibility testing
-        run: cargo test --features wyhash
+        run: cargo test --no-default-features --features debug,rand_core,wyhash
   
   msrv:
     runs-on: ubuntu-latest
