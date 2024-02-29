@@ -24,8 +24,8 @@ use self::{
 };
 
 /// The WyHash hasher, a fast & portable hashing algorithm. This implementation is
-/// based on the final v4 C reference implementation, as that is compatible with
-/// the constants used for the current `WyRand` implementation.
+/// based on the final v4/v4.2 C reference implementations (depending on whether the
+/// `v4_2` feature flag is enabled or not).
 ///
 /// ```
 /// use wyrand::WyHash;
