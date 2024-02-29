@@ -1,9 +1,14 @@
+#[cfg(feature = "randomised_wyhash")]
+mod builder;
 #[cfg(feature = "v4_2")]
 mod primes;
 mod read;
 mod secret;
 
 use core::hash::Hasher;
+
+#[cfg(feature = "randomised_wyhash")]
+pub use builder::RandomWyHashState;
 
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
@@ -18,9 +23,21 @@ use self::{
     secret::make_secret,
 };
 
-/// WyHash hasher, a fast & portable hashing algorithm. This implementation is
+/// The WyHash hasher, a fast & portable hashing algorithm. This implementation is
 /// based on the final v4 C reference implementation, as that is compatible with
 /// the constants used for the current `WyRand` implementation.
+///
+/// ```
+/// use wyrand::WyHash;
+/// use core::hash::Hasher;
+///
+/// let mut hasher = WyHash::default();
+///
+/// hasher.write_u64(5);
+///
+/// assert_ne!(hasher.finish(), 5); // Should not be represented by the same value any more
+/// ```
+#[cfg_attr(docsrs, doc(cfg(feature = "wyhash")))]
 #[derive(Clone)]
 pub struct WyHash {
     seed: u64,

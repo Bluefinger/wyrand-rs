@@ -24,7 +24,7 @@ impl WyRand {
     /// hardware, OS source, or from a suitable crate, like `getrandom`.
     #[inline]
     #[must_use]
-    pub fn new(state: u64) -> Self {
+    pub const fn new(state: u64) -> Self {
         Self { state }
     }
 
@@ -124,7 +124,7 @@ mod tests {
 
         // Should be the same internal state after cloning
         assert_eq!(
-            &rng, &cloned,
+            &rng.state, &cloned.state,
             "the two RNG instances are not the same after cloning"
         );
 
@@ -132,7 +132,7 @@ mod tests {
 
         // Should no longer have the same internal state after generating a random number
         assert_ne!(
-            &rng, &cloned,
+            &rng.state, &cloned.state,
             "the two RNG instances are the same after one was used"
         );
     }

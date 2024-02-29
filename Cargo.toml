@@ -1,12 +1,12 @@
 [package]
 name = "wyrand"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
 description = "A fast & portable non-cryptographic pseudorandom number generator and hashing algorithm"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/Bluefinger/wyrand-rs"
-keywords = ["fast", "rand", "random", "wyrand"]
+keywords = ["fast", "random", "wyrand", "hash", "wyhash"]
 categories = ["algorithms", "no-std"]
 exclude = ["/.*"]
 resolver = "2"
@@ -19,9 +19,11 @@ hash = []
 rand_core = ["dep:rand_core"]
 serde1 = ["dep:serde"]
 wyhash = []
+randomised_wyhash = ["wyhash", "dep:getrandom"]
 v4_2 = []
 
 [dependencies]
+getrandom = { version = "0.2", optional = true }
 rand_core = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 
