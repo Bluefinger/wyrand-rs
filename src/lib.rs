@@ -12,6 +12,5 @@ mod rand;
 mod utils;
 
 #[cfg(feature = "wyhash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "wyhash")))]
-pub use hasher::WyHash;
+pub use hasher::*;
 pub use rand::WyRand;

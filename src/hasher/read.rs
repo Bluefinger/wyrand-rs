@@ -12,17 +12,12 @@ pub(super) const fn wyread64(bits: &[u8]) -> u64 {
 
 #[inline(always)]
 pub(super) const fn wyread32(bits: &[u8]) -> u64 {
-    (bits[3] as u64) << 24
-        | (bits[2] as u64) << 16
-        | (bits[1] as u64) << 8
-        | (bits[0] as u64)
+    (bits[3] as u64) << 24 | (bits[2] as u64) << 16 | (bits[1] as u64) << 8 | (bits[0] as u64)
 }
 
 #[inline(always)]
 pub(super) const fn wyread_upto_24(bits: &[u8]) -> u64 {
-    (bits[0] as u64) << 16
-        | (bits[bits.len() >> 1] as u64) << 8
-        | (bits[bits.len() - 1] as u64)
+    (bits[0] as u64) << 16 | (bits[bits.len() >> 1] as u64) << 8 | (bits[bits.len() - 1] as u64)
 }
 
 #[inline(always)]

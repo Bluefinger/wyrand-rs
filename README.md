@@ -35,7 +35,17 @@ The crate will always export `WyRand` and will do so when set as `default-featur
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
 - **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
 - **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
+- **`randomised_wyhash`** - Enables `RandomisedWyHashBuilder`, a means to source a randomised state for `WyHash` for use in collections like `HashMap`/`HashSet`. Enables `wyhash` feature if it is not already enabled.
 - **`v4_2`** - Switches the PRNG/Hashing algorithms to use the final v4.2 implementation.
+
+## Building for WASM/Web
+
+If you are using `WyRand` with `rand_core` and/or `WyHash` with `randomised_wyhash` then for building for the web/WASM, you'll need to configure `getrandom` to make use of the browser APIs in order to source entropy from. Add the following to your project `Cargo.toml` if your WASM builds target the web:
+
+```toml
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+```
 
 ## License
 
