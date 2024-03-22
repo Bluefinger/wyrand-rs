@@ -8,6 +8,7 @@ mod secret;
 use core::hash::Hasher;
 
 #[cfg(feature = "randomised_wyhash")]
+#[cfg_attr(docsrs, doc(cfg(feature = "randomised_wyhash")))]
 pub use builder::RandomWyHashState;
 
 #[cfg(feature = "debug")]
@@ -19,7 +20,7 @@ use crate::{
 };
 
 use self::{
-    read::{is_over_48_bytes, wyread32, wyread64, wyread_upto_24},
+    read::{is_over_48_bytes, read_4_bytes, read_8_bytes, read_upto_3_bytes},
     secret::make_secret,
 };
 
@@ -73,19 +74,19 @@ impl WyHash {
     }
 
     #[inline]
-    fn consume_bytes(&mut self, bytes: &[u8]) {
+    fn consume_bytes(&self, bytes: &[u8]) -> (u64, u64, u64) {
         let (lo, hi): (u64, u64);
         let length = bytes.len();
         let mut seed = self.seed;
 
         match length {
             4..=16 => {
-                lo = (wyread32(bytes) << 32) | wyread32(&bytes[((length >> 3) << 2)..]);
-                hi = (wyread32(&bytes[(length - 4)..]) << 32)
-                    | wyread32(&bytes[(length - 4 - ((length >> 3) << 2))..]);
+                lo = (read_4_bytes(bytes) << 32) | read_4_bytes(&bytes[(length >> 3) << 2..]);
+                hi = (read_4_bytes(&bytes[length - 4..]) << 32)
+                    | read_4_bytes(&bytes[length - 4 - ((length >> 3) << 2)..]);
             }
             1..=3 => {
-                lo = wyread_upto_24(bytes);
+                lo = read_upto_3_bytes(bytes);
                 hi = 0;
             }
             0 => {
@@ -95,46 +96,46 @@ impl WyHash {
             _ => {
                 let mut index = length;
                 let mut start = 0;
+
                 if is_over_48_bytes(length) {
                     let mut seed1 = seed;
                     let mut seed2 = seed;
+
                     while is_over_48_bytes(index) {
                         seed = wymix(
-                            wyread64(&bytes[start..]) ^ self.secret[1],
-                            wyread64(&bytes[start + 8..]) ^ seed,
+                            read_8_bytes(&bytes[start..]) ^ self.secret[1],
+                            read_8_bytes(&bytes[start + 8..]) ^ seed,
                         );
                         seed1 = wymix(
-                            wyread64(&bytes[start + 16..]) ^ self.secret[2],
-                            wyread64(&bytes[start + 24..]) ^ seed1,
+                            read_8_bytes(&bytes[start + 16..]) ^ self.secret[2],
+                            read_8_bytes(&bytes[start + 24..]) ^ seed1,
                         );
                         seed2 = wymix(
-                            wyread64(&bytes[start + 32..]) ^ self.secret[3],
-                            wyread64(&bytes[start + 40..]) ^ seed2,
+                            read_8_bytes(&bytes[start + 32..]) ^ self.secret[3],
+                            read_8_bytes(&bytes[start + 40..]) ^ seed2,
                         );
                         index -= 48;
                         start += 48;
                     }
+
                     seed ^= seed1 ^ seed2;
                 }
 
                 while index > 16 {
                     seed = wymix(
-                        wyread64(&bytes[start..]) ^ self.secret[1],
-                        wyread64(&bytes[start + 8..]) ^ seed,
+                        read_8_bytes(&bytes[start..]) ^ self.secret[1],
+                        read_8_bytes(&bytes[start + 8..]) ^ seed,
                     );
                     index -= 16;
                     start += 16
                 }
 
-                lo = wyread64(&bytes[(length - 16)..]);
-                hi = wyread64(&bytes[(length - 8)..]);
+                lo = read_8_bytes(&bytes[length - 16..]);
+                hi = read_8_bytes(&bytes[length - 8..]);
             }
         }
 
-        self.lo = lo;
-        self.hi = hi;
-        self.seed = seed;
-        self.size += length as u64;
+        (lo, hi, seed)
     }
 }
 
@@ -142,7 +143,12 @@ impl Hasher for WyHash {
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
         for chunk in bytes.chunks(u64::MAX as usize) {
-            self.consume_bytes(chunk);
+            let (lo, hi, seed) = self.consume_bytes(chunk);
+
+            self.lo = lo;
+            self.hi = hi;
+            self.seed = seed;
+            self.size += chunk.len() as u64;
         }
     }
 
