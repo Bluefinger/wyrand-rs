@@ -81,9 +81,9 @@ impl WyHash {
 
         match length {
             4..=16 => {
-                lo = (read_4_bytes(bytes) << 32) | read_4_bytes(&bytes[((length >> 3) << 2)..]);
-                hi = (read_4_bytes(&bytes[(length - 4)..]) << 32)
-                    | read_4_bytes(&bytes[(length - 4 - ((length >> 3) << 2))..]);
+                lo = (read_4_bytes(bytes) << 32) | read_4_bytes(&bytes[(length >> 3) << 2..]);
+                hi = (read_4_bytes(&bytes[length - 4..]) << 32)
+                    | read_4_bytes(&bytes[length - 4 - ((length >> 3) << 2)..]);
             }
             1..=3 => {
                 lo = read_upto_3_bytes(bytes);
@@ -130,8 +130,8 @@ impl WyHash {
                     start += 16
                 }
 
-                lo = read_8_bytes(&bytes[(length - 16)..]);
-                hi = read_8_bytes(&bytes[(length - 8)..]);
+                lo = read_8_bytes(&bytes[length - 16..]);
+                hi = read_8_bytes(&bytes[length - 8..]);
             }
         }
 
