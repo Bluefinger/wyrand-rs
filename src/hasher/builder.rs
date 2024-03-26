@@ -46,8 +46,17 @@ impl RandomWyHashState {
 
         let mut state = [0; SIZE];
 
-        getrandom::getrandom(&mut state)
-            .expect("Failed to source entropy for WyHash randomised state");
+        #[cfg(not(feature = "threadrng_wyhash"))]
+        {
+            getrandom::getrandom(&mut state)
+                .expect("Failed to source entropy for WyHash randomised state");
+        }
+        #[cfg(feature = "threadrng_wyhash")]
+        {
+            use rand::RngCore;
+
+            rand::thread_rng().fill_bytes(&mut state);
+        }
 
         Self { state }
     }
