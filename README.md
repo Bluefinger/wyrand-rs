@@ -36,6 +36,7 @@ The crate will always export `WyRand` and will do so when set as `default-featur
 - **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
 - **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
 - **`randomised_wyhash`** - Enables `RandomisedWyHashBuilder`, a means to source a randomised state for `WyHash` for use in collections like `HashMap`/`HashSet`. Enables `wyhash` feature if it is not already enabled.
+- **`fully_randomised_wyhash`** - Randomises not just the seed for `RandomisedWyHashBuilder`, but also the secret. Incurs a performance hit every time `WyHash` is initialised but it is more secure as a result. Enables `randomised_wyhash` if not already enabled.
 - **`v4_2`** - Switches the PRNG/Hashing algorithms to use the final v4.2 implementation.
 
 ## Building for WASM/Web

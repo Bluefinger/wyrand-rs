@@ -66,6 +66,24 @@ fn wyhash_benchmark(c: &mut Criterion) {
                 },
             );
         });
+
+    c.bench_function("Hash new with default secret", |b| {
+        b.iter(|| WyHash::new_with_default_secret(black_box(42)));
+    });
+
+    c.bench_function("Hash new with random secret", |b| {
+        b.iter(|| WyHash::new(black_box(42), black_box(256)));
+    });
+
+    #[cfg(feature = "randomised_wyhash")]
+    c.bench_function("Random Hash new", |b| {
+        use wyrand::RandomWyHashState;
+        use std::hash::BuildHasher;
+
+        b.iter(|| {
+            RandomWyHashState::new().build_hasher()
+        });
+    });
 }
 
 pub fn benches() {

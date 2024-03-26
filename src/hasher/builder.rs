@@ -1,19 +1,23 @@
-use core::{hash::BuildHasher, mem::MaybeUninit};
+use core::hash::BuildHasher;
 
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
-
-use getrandom::getrandom_uninit;
 
 use crate::WyHash;
 
 #[cfg_attr(docsrs, doc(cfg(feature = "randomised_wyhash")))]
 #[derive(Clone, Copy)]
+#[repr(align(8))]
 /// Randomised state constructor for [`WyHash`]. This builder will source entropy in order
 /// to provide random seeds for [`WyHash`]. This will yield a hasher with not just a random
 /// seed, but also a new random secret, granting extra protection against DOS and prediction
 /// attacks.
-pub struct RandomWyHashState(u64, u64);
+pub struct RandomWyHashState {
+    #[cfg(feature = "fully_randomised_wyhash")]
+    state: [u8; 16],
+    #[cfg(not(feature = "fully_randomised_wyhash"))]
+    state: [u8; 8],
+}
 
 impl RandomWyHashState {
     /// Create a new [`RandomWyHashState`] instance. Calling this method will attempt to
@@ -35,21 +39,17 @@ impl RandomWyHashState {
     /// ```
     #[must_use]
     pub fn new() -> Self {
-        // Don't bother zeroing as we will initialise this with random data. If the initialisation fails
-        // for any reason, we will panic instead of trying to continue with a fully or partially
-        // uninitialised buffer. This ensures the whole process is safe without the need to use an
-        // unsafe block.
-        let mut bytes = [MaybeUninit::<u8>::uninit(); core::mem::size_of::<u64>() * 2];
+        #[cfg(feature = "fully_randomised_wyhash")]
+        const SIZE: usize = core::mem::size_of::<u64>() * 2;
+        #[cfg(not(feature = "fully_randomised_wyhash"))]
+        const SIZE: usize = core::mem::size_of::<u64>();
 
-        let bytes = getrandom_uninit(&mut bytes)
+        let mut state = [0; SIZE];
+
+        getrandom::getrandom(&mut state)
             .expect("Failed to source entropy for WyHash randomised state");
 
-        let (first, second) = bytes.split_at(core::mem::size_of::<u64>());
-
-        let first = u64::from_ne_bytes(first.try_into().unwrap());
-        let second = u64::from_ne_bytes(second.try_into().unwrap());
-
-        Self(first, second)
+        Self { state }
     }
 }
 
@@ -58,7 +58,21 @@ impl BuildHasher for RandomWyHashState {
 
     #[inline]
     fn build_hasher(&self) -> Self::Hasher {
-        WyHash::new(self.0, self.1)
+        #[cfg(feature = "fully_randomised_wyhash")]
+        {
+            let (first_seed, second_seed) = self.state.split_at(core::mem::size_of::<u64>());
+
+            let first_seed = u64::from_ne_bytes(first_seed.try_into().unwrap());
+            let second_seed = u64::from_ne_bytes(second_seed.try_into().unwrap());
+
+            WyHash::new(first_seed, second_seed)
+        }
+        #[cfg(not(feature = "fully_randomised_wyhash"))]
+        {
+            let seed = u64::from_ne_bytes(self.state);
+
+            WyHash::new_with_default_secret(seed)
+        }
     }
 }
 
@@ -103,13 +117,6 @@ mod tests {
         let builder2 = RandomWyHashState::new();
 
         // The two builders' internal states are different to each other
-        assert_ne!(&builder1.0, &builder2.0);
-        assert_ne!(&builder1.1, &builder2.1);
-
-        // Each builder's internal state should not be the same (hopefully).
-        // It is more likely that we have not initialised things correctly than
-        // to have the entropy source output the same bits for both fields.
-        assert_ne!(&builder1.0, &builder1.1);
-        assert_ne!(&builder2.0, &builder2.1);
+        assert_ne!(&builder1.state, &builder2.state);
     }
 }
