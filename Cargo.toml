@@ -1,6 +1,6 @@
 [package]
 name = "wyrand"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
 description = "A fast & portable non-cryptographic pseudorandom number generator and hashing algorithm"
@@ -22,6 +22,7 @@ rand_core = ["dep:rand_core"]
 serde1 = ["dep:serde"]
 wyhash = []
 randomised_wyhash = ["wyhash", "dep:getrandom"]
+fully_randomised_wyhash = ["randomised_wyhash"]
 v4_2 = []
 
 [dependencies]
