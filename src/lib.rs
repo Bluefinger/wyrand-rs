@@ -8,9 +8,9 @@
 mod constants;
 #[cfg(feature = "wyhash")]
 mod hasher;
-mod rand;
+mod wyrand;
 mod utils;
 
 #[cfg(feature = "wyhash")]
 pub use hasher::*;
-pub use rand::WyRand;
+pub use wyrand::WyRand;
