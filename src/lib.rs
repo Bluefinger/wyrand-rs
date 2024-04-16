@@ -8,8 +8,8 @@
 mod constants;
 #[cfg(feature = "wyhash")]
 mod hasher;
-mod wyrand;
 mod utils;
+mod wyrand;
 
 #[cfg(feature = "wyhash")]
 pub use hasher::*;
