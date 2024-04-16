@@ -139,7 +139,7 @@ impl WyHash {
     }
 
     #[inline]
-    fn check_has_seed(&mut self) {
+    fn mix_current_seed(&mut self) {
         if self.size != 0 {
             self.seed = wymix(self.lo, self.hi ^ self.seed);
         }
@@ -149,7 +149,7 @@ impl WyHash {
 impl Hasher for WyHash {
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
-        self.check_has_seed();
+        self.mix_current_seed();
 
         let (lo, hi, seed) = self.consume_bytes(bytes);
 
@@ -157,6 +157,42 @@ impl Hasher for WyHash {
         self.hi = hi;
         self.seed = seed;
         self.size += bytes.len() as u64;
+    }
+
+    #[inline]
+    fn write_u8(&mut self, i: u8) {
+        self.write_u64(i as u64)
+    }
+
+    #[inline]
+    fn write_u16(&mut self, i: u16) {
+        self.write_u64(i as u64)
+    }
+
+    #[inline]
+    fn write_u32(&mut self, i: u32) {
+        self.write_u64(i as u64)
+    }
+
+    #[inline]
+    fn write_u64(&mut self, i: u64) {
+        self.mix_current_seed();
+        self.lo = i;
+        self.hi = 0;
+        self.size += 8;
+    }
+
+    #[inline]
+    fn write_u128(&mut self, i: u128) {
+        self.mix_current_seed();
+        self.lo = i as u64;
+        self.hi = (i >> 64) as u64;
+        self.size += 16;
+    }
+
+    #[inline]
+    fn write_usize(&mut self, i: usize) {
+        self.write_u64(i as u64);
     }
 
     #[inline]
@@ -186,6 +222,8 @@ mod tests {
     extern crate alloc;
 
     use super::*;
+
+    use core::hash::Hash;
 
     #[cfg(feature = "debug")]
     #[test]
@@ -249,7 +287,7 @@ mod tests {
     }
 
     #[test]
-    fn multiple_writes_are_effective() {
+    fn multiple_writes_no_collision() {
         let mut hasher = WyHash::new_with_default_secret(0);
         hasher.write(b"abcdef");
         hasher.write(b"abcdef");
@@ -258,6 +296,19 @@ mod tests {
         let mut hasher = WyHash::new_with_default_secret(0);
         hasher.write(b"abcdeF");
         hasher.write(b"abcdef");
+        let hash_b = hasher.finish();
+
+        assert_ne!(hash_a, hash_b);
+    }
+
+    #[test]
+    fn tuples_no_collision() {
+        let mut hasher = WyHash::new_with_default_secret(0);
+        (1000, 2000).hash(&mut hasher);
+        let hash_a = hasher.finish();
+
+        let mut hasher = WyHash::new_with_default_secret(0);
+        (1500, 2000).hash(&mut hasher);
         let hash_b = hasher.finish();
 
         assert_ne!(hash_a, hash_b);
