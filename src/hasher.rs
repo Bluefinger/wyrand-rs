@@ -75,67 +75,58 @@ impl WyHash {
 
     #[inline]
     fn consume_bytes(&self, bytes: &[u8]) -> (u64, u64, u64) {
-        let (lo, hi): (u64, u64);
         let length = bytes.len();
-        let mut seed = self.seed;
+        if length <= 0 {
+            (0, 0, self.seed)
+        } else if length <= 3 {
+            (read_upto_3_bytes(bytes), 0, self.seed)
+        } else if length <= 16 {
+            let lo = (read_4_bytes(bytes) << 32) | read_4_bytes(&bytes[(length >> 3) << 2..]);
+            let hi = (read_4_bytes(&bytes[length - 4..]) << 32)
+                | read_4_bytes(&bytes[length - 4 - ((length >> 3) << 2)..]);
+            (lo, hi, self.seed)
+        } else {
+            let mut index = length;
+            let mut start = 0;
+            let mut seed = self.seed;
 
-        match length {
-            4..=16 => {
-                lo = (read_4_bytes(bytes) << 32) | read_4_bytes(&bytes[(length >> 3) << 2..]);
-                hi = (read_4_bytes(&bytes[length - 4..]) << 32)
-                    | read_4_bytes(&bytes[length - 4 - ((length >> 3) << 2)..]);
-            }
-            1..=3 => {
-                lo = read_upto_3_bytes(bytes);
-                hi = 0;
-            }
-            0 => {
-                lo = 0;
-                hi = 0;
-            }
-            _ => {
-                let mut index = length;
-                let mut start = 0;
+            if is_over_48_bytes(length) {
+                let mut seed1 = seed;
+                let mut seed2 = seed;
 
-                if is_over_48_bytes(length) {
-                    let mut seed1 = seed;
-                    let mut seed2 = seed;
-
-                    while is_over_48_bytes(index) {
-                        seed = wymix(
-                            read_8_bytes(&bytes[start..]) ^ self.secret[1],
-                            read_8_bytes(&bytes[start + 8..]) ^ seed,
-                        );
-                        seed1 = wymix(
-                            read_8_bytes(&bytes[start + 16..]) ^ self.secret[2],
-                            read_8_bytes(&bytes[start + 24..]) ^ seed1,
-                        );
-                        seed2 = wymix(
-                            read_8_bytes(&bytes[start + 32..]) ^ self.secret[3],
-                            read_8_bytes(&bytes[start + 40..]) ^ seed2,
-                        );
-                        index -= 48;
-                        start += 48;
-                    }
-
-                    seed ^= seed1 ^ seed2;
-                }
-
-                while index > 16 {
+                while is_over_48_bytes(index) {
                     seed = wymix(
                         read_8_bytes(&bytes[start..]) ^ self.secret[1],
                         read_8_bytes(&bytes[start + 8..]) ^ seed,
                     );
-                    index -= 16;
-                    start += 16
+                    seed1 = wymix(
+                        read_8_bytes(&bytes[start + 16..]) ^ self.secret[2],
+                        read_8_bytes(&bytes[start + 24..]) ^ seed1,
+                    );
+                    seed2 = wymix(
+                        read_8_bytes(&bytes[start + 32..]) ^ self.secret[3],
+                        read_8_bytes(&bytes[start + 40..]) ^ seed2,
+                    );
+                    index -= 48;
+                    start += 48;
                 }
 
-                lo = read_8_bytes(&bytes[length - 16..]);
-                hi = read_8_bytes(&bytes[length - 8..]);
+                seed ^= seed1 ^ seed2;
             }
-        }
 
-        (lo, hi, seed)
+            while index > 16 {
+                seed = wymix(
+                    read_8_bytes(&bytes[start..]) ^ self.secret[1],
+                    read_8_bytes(&bytes[start + 8..]) ^ seed,
+                );
+                index -= 16;
+                start += 16
+            }
+
+            let lo = read_8_bytes(&bytes[length - 16..]);
+            let hi = read_8_bytes(&bytes[length - 8..]);
+            (lo, hi, seed)
+        }
     }
 }
 
