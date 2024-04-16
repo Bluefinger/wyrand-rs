@@ -38,6 +38,15 @@ use self::{
 ///
 /// assert_ne!(hasher.finish(), 5); // Should not be represented by the same value any more
 /// ```
+///
+/// # Stability
+///
+/// The result is only guaranteed to match the result `wyhash` would naturally produce if `write`
+/// is called a single time, followed by a call to `finish`.
+///
+/// Any other sequence of events (including calls to `write_u32` or similar functions) are
+/// guaranteed to have consistent results between platforms and versions of this crate, but may not
+/// map well to the reference implementation.
 #[cfg_attr(docsrs, doc(cfg(feature = "wyhash")))]
 #[derive(Clone)]
 pub struct WyHash {
@@ -128,11 +137,20 @@ impl WyHash {
             (lo, hi, seed)
         }
     }
+
+    #[inline]
+    fn check_has_seed(&mut self) {
+        if self.size != 0 {
+            self.seed = wymix(self.lo, self.hi ^ self.seed);
+        }
+    }
 }
 
 impl Hasher for WyHash {
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
+        self.check_has_seed();
+
         let (lo, hi, seed) = self.consume_bytes(bytes);
 
         self.lo = lo;
@@ -215,7 +233,7 @@ mod tests {
             .into_iter()
             .enumerate()
             .map(|(seed, (expected, input))| {
-                let mut hasher = WyHash::new_with_secret(seed as u64, [WY0, WY1, WY2, WY3]);
+                let mut hasher = WyHash::new_with_default_secret(seed as u64);
 
                 hasher.write(input.as_bytes());
 
@@ -228,5 +246,20 @@ mod tests {
                     input
                 );
             });
+    }
+
+    #[test]
+    fn multiple_writes_are_effective() {
+        let mut hasher = WyHash::new_with_default_secret(0);
+        hasher.write(b"abcdef");
+        hasher.write(b"abcdef");
+        let hash_a = hasher.finish();
+
+        let mut hasher = WyHash::new_with_default_secret(0);
+        hasher.write(b"abcdeF");
+        hasher.write(b"abcdef");
+        let hash_b = hasher.finish();
+
+        assert_ne!(hash_a, hash_b);
     }
 }
