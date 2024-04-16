@@ -5,6 +5,9 @@
 #![no_std]
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "fully_randomised_wyhash")]
+extern crate std;
+
 mod constants;
 #[cfg(feature = "wyhash")]
 mod hasher;

@@ -11,7 +11,7 @@ The implementations for both the PRNG and hasher are based on the C reference im
 
 This crate provides both the v4.2 final implementation of the WyRand/WyHash algorithm, or the older final v4 implementation. The two versions have different outputs due to changes in the algorithm and also with the constants used. Currently by default, the older final v4 algorithm will be used. In the future, this will be changed to the newer algorithm to be the default, but the old implementation will remain for backwards compatibility reasons.
 
-This crate can be used on its own or be integrated with `rand_core`/`rand`, and it is `no-std` compatible. Minimum compatible Rust version is 1.60. This crate is also implemented with no unsafe code via `#![forbid(unsafe_code)]`.
+This crate can be used on its own or be integrated with `rand_core`/`rand`, and it is `no-std` compatible. Minimum compatible Rust version is 1.70. This crate is also implemented with no unsafe code via `#![forbid(unsafe_code)]`.
 
 ## Example
 
@@ -35,9 +35,9 @@ The crate will always export `WyRand` and will do so when set as `default-featur
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
 - **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
 - **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
-- **`randomised_wyhash`** - Enables `RandomisedWyHashBuilder`, a means to source a randomised state for `WyHash` for use in collections like `HashMap`/`HashSet`. Enables `wyhash` feature if it is not already enabled.
-- **`fully_randomised_wyhash`** - Randomises not just the seed for `RandomisedWyHashBuilder`, but also the secret. Incurs a performance hit every time `WyHash` is initialised but it is more secure as a result. Enables `randomised_wyhash` if not already enabled.
-- **`threadrng_wyhash`** - Enables sourcing entropy from `rand`'s `thread_rng()` method. Much quicker than `getrandom` and best used without the `fully_randomised_wyhash` flag as the overhead of calculating new secrets dwarfs any gains in entropy sourcing. Enables `randomised_wyhash` if not already enabled. Requires `std` environments.
+- **`randomised_wyhash`** - Enables `RandomWyHashState`, a means to source a randomised state for `WyHash` for use in collections like `HashMap`/`HashSet`. Enables `wyhash` feature if it is not already enabled.
+- **`fully_randomised_wyhash`** - Randomises not just the seed for `RandomWyHashState`, but also the secret. The new secret is generated once per runtime, and then is used for every subsequent new `WyHash` (with each `WyHash` instance having its own unique seed). Enables `randomised_wyhash` if not already enabled, and requires `std` environments.
+- **`threadrng_wyhash`** - Enables sourcing entropy from `rand`'s `thread_rng()` method. Much quicker than `getrandom`. Enables `randomised_wyhash` if not already enabled. Requires `std` environments.
 - **`v4_2`** - Switches the PRNG/Hashing algorithms to use the final v4.2 implementation.
 
 ## Building for WASM/Web
