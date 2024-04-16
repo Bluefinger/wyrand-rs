@@ -142,14 +142,12 @@ impl WyHash {
 impl Hasher for WyHash {
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
-        for chunk in bytes.chunks(u64::MAX as usize) {
-            let (lo, hi, seed) = self.consume_bytes(chunk);
+        let (lo, hi, seed) = self.consume_bytes(bytes);
 
-            self.lo = lo;
-            self.hi = hi;
-            self.seed = seed;
-            self.size += chunk.len() as u64;
-        }
+        self.lo = lo;
+        self.hi = hi;
+        self.seed = seed;
+        self.size += bytes.len() as u64;
     }
 
     #[inline]
