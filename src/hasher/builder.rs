@@ -95,10 +95,10 @@ impl RandomWyHashState {
     /// # Examples
     ///
     /// ```
-    /// use wyrand::RandomWyHashState;
+    /// use wyrand::{RandomWyHashState, make_secret};
     /// use core::hash::BuildHasher;
     ///
-    /// let s = RandomWyHashState::new();
+    /// let s = RandomWyHashState::new_with_secret(make_secret(42));
     ///
     /// let mut hasher = s.build_hasher(); // Creates a WyHash instance with random state
     /// ```
