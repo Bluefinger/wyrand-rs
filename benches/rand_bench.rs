@@ -77,12 +77,10 @@ fn wyhash_benchmark(c: &mut Criterion) {
 
     #[cfg(feature = "randomised_wyhash")]
     c.bench_function("Random Hash new", |b| {
-        use wyrand::RandomWyHashState;
         use std::hash::BuildHasher;
+        use wyrand::RandomWyHashState;
 
-        b.iter(|| {
-            RandomWyHashState::new().build_hasher()
-        });
+        b.iter(|| RandomWyHashState::new().build_hasher());
     });
 }
 
