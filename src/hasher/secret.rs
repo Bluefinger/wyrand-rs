@@ -3,8 +3,9 @@ use crate::WyRand;
 #[cfg(feature = "v4_2")]
 use crate::hasher::primes::is_prime;
 
-/// Generate new secret for wyhash
-pub(super) const fn make_secret(mut seed: u64) -> [u64; 4] {
+/// Generate new secret for wyhash. Takes a seed value and outputs an array of 4 suitable `u64` constants
+/// for use with the hasher. The PRNG will always use the default constants provided. 
+pub const fn make_secret(mut seed: u64) -> [u64; 4] {
     const C_VALUES: &[u8] = &[
         15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89,
         90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150,

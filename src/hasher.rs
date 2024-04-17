@@ -19,10 +19,9 @@ use crate::{
     utils::{wymix, wymul},
 };
 
-use self::{
-    read::{is_over_48_bytes, read_4_bytes, read_8_bytes, read_upto_3_bytes},
-    secret::make_secret,
-};
+use self::read::{is_over_48_bytes, read_4_bytes, read_8_bytes, read_upto_3_bytes};
+
+pub use self::secret::make_secret;
 
 /// The WyHash hasher, a fast & portable hashing algorithm. This implementation is
 /// based on the final v4/v4.2 C reference implementations (depending on whether the
@@ -58,7 +57,7 @@ pub struct WyHash {
 }
 
 impl WyHash {
-    /// Create hasher with a seed and a newly generated secret
+    /// Create hasher with seeds for the state and secret (generates a new secret, expensive to compute).
     pub const fn new(seed: u64, secret_seed: u64) -> Self {
         Self::new_with_secret(seed, make_secret(secret_seed))
     }
@@ -69,8 +68,10 @@ impl WyHash {
         Self::new_with_secret(seed, [WY0, WY1, WY2, WY3])
     }
 
+    /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`make_secret`],
+    /// else the hashing output will be weak/vulnerable.
     #[inline]
-    const fn new_with_secret(mut seed: u64, secret: [u64; 4]) -> Self {
+    pub const fn new_with_secret(mut seed: u64, secret: [u64; 4]) -> Self {
         seed ^= wymix(seed ^ secret[0], secret[1]);
 
         WyHash {
@@ -85,7 +86,7 @@ impl WyHash {
     #[inline]
     fn consume_bytes(&self, bytes: &[u8]) -> (u64, u64, u64) {
         let length = bytes.len();
-        if length <= 0 {
+        if length == 0 {
             (0, 0, self.seed)
         } else if length <= 3 {
             (read_upto_3_bytes(bytes), 0, self.seed)
@@ -213,7 +214,9 @@ impl Default for WyHash {
 impl Debug for WyHash {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // Do not expose the internal state of the Hasher
-        f.debug_tuple("WyHash").finish()
+        f.debug_struct("WyHash")
+            .field("size", &self.size)
+            .finish_non_exhaustive()
     }
 }
 
@@ -234,8 +237,8 @@ mod tests {
 
         assert_eq!(
             format!("{rng:?}"),
-            "WyHash",
-            "Debug should not be leaking internal state"
+            "WyHash { size: 0, .. }",
+            "Debug should not be leaking sensitive internal state"
         );
     }
 
