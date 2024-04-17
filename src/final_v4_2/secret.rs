@@ -18,22 +18,22 @@ impl Secret {
     }
 
     #[inline]
-    pub(super) const fn first(self) -> u64 {
+    pub(super) const fn first(&self) -> u64 {
         self.0[0]
     }
 
     #[inline]
-    pub(super) const fn second(self) -> u64 {
+    pub(super) const fn second(&self) -> u64 {
         self.0[1]
     }
 
     #[inline]
-    pub(super) const fn third(self) -> u64 {
+    pub(super) const fn third(&self) -> u64 {
         self.0[2]
     }
 
     #[inline]
-    pub(super) const fn fourth(self) -> u64 {
+    pub(super) const fn fourth(&self) -> u64 {
         self.0[3]
     }
 }
