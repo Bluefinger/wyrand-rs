@@ -12,7 +12,7 @@ pub struct LegacySecret([u64; 4]);
 
 impl LegacySecret {
     #[must_use]
-    #[inline]
+    #[inline(always)]
     pub(super) const fn new(first: u64, second: u64, third: u64, fourth: u64) -> Self {
         Self([first, second, third, fourth])
     }
