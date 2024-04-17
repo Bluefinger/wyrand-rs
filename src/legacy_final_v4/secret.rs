@@ -17,22 +17,22 @@ impl LegacySecret {
         Self([first, second, third, fourth])
     }
 
-    #[inline]
+    #[inline(always)]
     pub(super) const fn first(&self) -> u64 {
         self.0[0]
     }
 
-    #[inline]
+    #[inline(always)]
     pub(super) const fn second(&self) -> u64 {
         self.0[1]
     }
 
-    #[inline]
+    #[inline(always)]
     pub(super) const fn third(&self) -> u64 {
         self.0[2]
     }
 
-    #[inline]
+    #[inline(always)]
     pub(super) const fn fourth(&self) -> u64 {
         self.0[3]
     }

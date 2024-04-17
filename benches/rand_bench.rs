@@ -33,7 +33,7 @@ fn wyrand_benchmark(c: &mut Criterion) {
 
 #[cfg(feature = "wyhash")]
 fn wyhash_benchmark(c: &mut Criterion) {
-    use std::hash::Hasher;
+    use std::hash::{Hash, Hasher};
 
     use criterion::BenchmarkId;
     use wyrand::WyHash;
@@ -66,6 +66,41 @@ fn wyhash_benchmark(c: &mut Criterion) {
                 },
             );
         });
+
+    c.bench_function("Hash integer single", |b| {
+        b.iter(|| {
+            let mut hasher = WyHash::new_with_default_secret(black_box(42));
+
+            hasher.write_u64(black_box(256));
+
+            hasher.finish()
+        });
+    });
+
+    c.bench_function("Hash integer multiple", |b| {
+        let big_value = u64::MAX as u128 + 125;
+
+        b.iter(|| {
+            let mut hasher = WyHash::new_with_default_secret(black_box(42));
+
+            hasher.write_u64(black_box(256));
+            hasher.write_u128(black_box(big_value));
+
+            hasher.finish()
+        });
+    });
+
+    c.bench_function("Hash integer tuple", |b| {
+        let big_value = u64::MAX as u128 + 125;
+
+        b.iter(|| {
+            let mut hasher = WyHash::new_with_default_secret(black_box(42));
+
+            (black_box(42), black_box(big_value)).hash(&mut hasher);
+
+            hasher.finish()
+        });
+    });
 
     c.bench_function("Hash new with default secret", |b| {
         b.iter(|| WyHash::new_with_default_secret(black_box(42)));
