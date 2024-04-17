@@ -6,12 +6,10 @@ use core::fmt::Debug;
 #[cfg(feature = "fully_randomised_wyhash")]
 use std::sync::OnceLock;
 
-use super::WyHashLegacy;
-
-use super::secret::LegacySecret;
+use crate::WyHash;
 
 #[cfg(feature = "fully_randomised_wyhash")]
-static SECRET: OnceLock<LegacySecret> = OnceLock::new();
+static SECRET: OnceLock<[u64; 4]> = OnceLock::new();
 
 #[inline]
 fn get_random_u64() -> u64 {
@@ -39,20 +37,21 @@ fn get_random_u64() -> u64 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "randomised_wyhash")))]
 #[derive(Clone, Copy)]
-/// Randomised state constructor for [`WyHashLegacy`]. This builder will source entropy in order
-/// to provide random seeds for [`WyHashLegacy`]. If the `fully_randomised_wyhash` feature is enabled,
+/// Randomised state constructor for [`WyHash`]. This builder will source entropy in order
+/// to provide random seeds for [`WyHash`]. If the `fully_randomised_wyhash` feature is enabled,
 /// this will yield a hasher with not just a random seed, but also a new random secret,
 /// granting extra protection against DOS and prediction attacks.
-pub struct RandomWyHashLegacyState {
+pub struct RandomWyHashState {
     state: u64,
-    secret: LegacySecret,
+    secret: [u64; 4],
 }
 
-impl RandomWyHashLegacyState {
-    /// Create a new [`RandomWyHashLegacyState`] instance. Calling this method will attempt to
+impl RandomWyHashState {
+    /// Create a new [`RandomWyHashState`] instance. Calling this method will attempt to
     /// draw entropy from hardware/OS sources. If `fully_randomised_wyhash` feature is enabled,
-    /// then it will use a randomised `secret` as well, otherwise it uses the default wyhash constants.
+    /// then it will use a randomised `secret` as well, otherwise it uses the default wyhash constants. 
     ///
     /// # Panics
     ///
@@ -61,32 +60,33 @@ impl RandomWyHashLegacyState {
     /// # Examples
     ///
     /// ```
-    /// use wyrand::legacy_final_v4::RandomWyHashLegacyState;
+    /// use wyrand::RandomWyHashState;
     /// use core::hash::BuildHasher;
     ///
-    /// let s = RandomWyHashLegacyState::new();
+    /// let s = RandomWyHashState::new();
     ///
     /// let mut hasher = s.build_hasher(); // Creates a WyHash instance with random state
     /// ```
     #[must_use]
     #[inline]
     pub fn new() -> Self {
-        #[cfg(not(feature = "fully_randomised_wyhash"))]
-        use super::constants::{WY0, WY1, WY2, WY3};
         #[cfg(feature = "fully_randomised_wyhash")]
-        use super::secret::make_secret_legacy;
+        use crate::hasher::secret::make_secret;
+
+        #[cfg(not(feature = "fully_randomised_wyhash"))]
+        use crate::constants::{WY0, WY1, WY2, WY3};
 
         #[cfg(feature = "fully_randomised_wyhash")]
-        let secret = *SECRET.get_or_init(|| make_secret_legacy(get_random_u64()));
+        let secret = *SECRET.get_or_init(|| make_secret(get_random_u64()));
         #[cfg(not(feature = "fully_randomised_wyhash"))]
-        let secret = LegacySecret::new(WY0, WY1, WY2, WY3);
+        let secret = [WY0, WY1, WY2, WY3];
 
         Self::new_with_secret(secret)
     }
 
-    /// Create a new [`RandomWyHashLegacyState`] instance with a provided secret. Calling this method
+    /// Create a new [`RandomWyHashState`] instance with a provided secret. Calling this method
     /// will attempt to draw entropy from hardware/OS sources, and assumes the user provided the
-    /// secret via [`WyHashLegacy::make_secret`].
+    /// secret via [`super::secret::make_secret`].
     ///
     /// # Panics
     ///
@@ -95,16 +95,16 @@ impl RandomWyHashLegacyState {
     /// # Examples
     ///
     /// ```
+    /// use wyrand::{RandomWyHashState, make_secret};
     /// use core::hash::BuildHasher;
-    /// use wyrand::legacy_final_v4::{RandomWyHashLegacyState, WyHashLegacy};
     ///
-    /// let s = RandomWyHashLegacyState::new_with_secret(WyHashLegacy::make_secret(42));
+    /// let s = RandomWyHashState::new_with_secret(make_secret(42));
     ///
     /// let mut hasher = s.build_hasher(); // Creates a WyHash instance with random state
     /// ```
     #[must_use]
     #[inline]
-    pub fn new_with_secret(secret: LegacySecret) -> Self {
+    pub fn new_with_secret(secret: [u64; 4]) -> Self {
         Self {
             state: get_random_u64(),
             secret,
@@ -112,16 +112,16 @@ impl RandomWyHashLegacyState {
     }
 }
 
-impl BuildHasher for RandomWyHashLegacyState {
-    type Hasher = WyHashLegacy;
+impl BuildHasher for RandomWyHashState {
+    type Hasher = WyHash;
 
     #[inline]
     fn build_hasher(&self) -> Self::Hasher {
-        WyHashLegacy::new_with_secret(self.state, self.secret)
+        WyHash::new_with_secret(self.state, self.secret)
     }
 }
 
-impl Default for RandomWyHashLegacyState {
+impl Default for RandomWyHashState {
     #[inline]
     fn default() -> Self {
         Self::new()
@@ -129,9 +129,9 @@ impl Default for RandomWyHashLegacyState {
 }
 
 #[cfg(feature = "debug")]
-impl Debug for RandomWyHashLegacyState {
+impl Debug for RandomWyHashState {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("RandomisedWyHashLegacyState")
+        f.debug_struct("RandomisedWyHashBuilder")
             .finish_non_exhaustive()
     }
 }
@@ -147,19 +147,19 @@ mod tests {
     fn no_leaking_debug() {
         use alloc::format;
 
-        let builder = RandomWyHashLegacyState::default();
+        let builder = RandomWyHashState::default();
 
         assert_eq!(
             format!("{builder:?}"),
-            "RandomisedWyHashLegacyState { .. }",
+            "RandomisedWyHashBuilder { .. }",
             "Debug should not be leaking internal state"
         );
     }
 
     #[test]
     fn randomised_builder_states() {
-        let builder1 = RandomWyHashLegacyState::new();
-        let builder2 = RandomWyHashLegacyState::new();
+        let builder1 = RandomWyHashState::new();
+        let builder2 = RandomWyHashState::new();
 
         // The two builders' internal states are different to each other
         assert_ne!(&builder1.state, &builder2.state);
@@ -171,9 +171,9 @@ mod tests {
         // same as the default secret.
         #[cfg(feature = "fully_randomised_wyhash")]
         {
-            use super::super::constants::{WY0, WY1, WY2, WY3};
+            use crate::constants::{WY0, WY1, WY2, WY3};
 
-            let default_secret = LegacySecret::new(WY0, WY1, WY2, WY3);
+            let default_secret = [WY0, WY1, WY2, WY3];
 
             assert_ne!(&builder1.secret, &default_secret);
             assert_ne!(&builder2.secret, &default_secret);

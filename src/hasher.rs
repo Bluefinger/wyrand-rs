@@ -1,20 +1,31 @@
+#[cfg(feature = "randomised_wyhash")]
+mod builder;
+#[cfg(feature = "v4_2")]
+mod primes;
+mod read;
+mod secret;
+
 use core::hash::Hasher;
+
+#[cfg(feature = "randomised_wyhash")]
+#[cfg_attr(docsrs, doc(cfg(feature = "randomised_wyhash")))]
+pub use builder::RandomWyHashState;
 
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
 
 use crate::{
-    read::{read_4_bytes, read_8_bytes, read_upto_3_bytes},
+    constants::{WY0, WY1, WY2, WY3},
     utils::{wymix, wymul},
 };
 
-use super::{
-    constants::{WY0, WY1, WY2, WY3},
-    secret::{make_secret, Secret},
-};
+use self::read::{is_over_48_bytes, read_4_bytes, read_8_bytes, read_upto_3_bytes};
+
+pub use self::secret::make_secret;
 
 /// The WyHash hasher, a fast & portable hashing algorithm. This implementation is
-/// based on the final v4.2 C reference implementation.
+/// based on the final v4/v4.2 C reference implementations (depending on whether the
+/// `v4_2` feature flag is enabled or not).
 ///
 /// ```
 /// use wyrand::WyHash;
@@ -35,23 +46,17 @@ use super::{
 /// Any other sequence of events (including calls to `write_u32` or similar functions) are
 /// guaranteed to have consistent results between platforms and versions of this crate, but may not
 /// map well to the reference implementation.
+#[cfg_attr(docsrs, doc(cfg(feature = "wyhash")))]
 #[derive(Clone)]
 pub struct WyHash {
     seed: u64,
     lo: u64,
     hi: u64,
     size: u64,
-    secret: Secret,
+    secret: [u64; 4],
 }
 
 impl WyHash {
-    /// thing
-    #[must_use]
-    #[inline]
-    pub fn make_secret(seed: u64) -> Secret {
-        make_secret(seed)
-    }
-
     /// Create hasher with seeds for the state and secret (generates a new secret, expensive to compute).
     pub const fn new(seed: u64, secret_seed: u64) -> Self {
         Self::new_with_secret(seed, make_secret(secret_seed))
@@ -60,14 +65,14 @@ impl WyHash {
     /// Create hasher with a seed and default secrets
     #[inline]
     pub const fn new_with_default_secret(seed: u64) -> Self {
-        Self::new_with_secret(seed, Secret::new(WY0, WY1, WY2, WY3))
+        Self::new_with_secret(seed, [WY0, WY1, WY2, WY3])
     }
 
     /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`make_secret`],
     /// else the hashing output will be weak/vulnerable.
     #[inline]
-    pub const fn new_with_secret(mut seed: u64, secret: Secret) -> Self {
-        seed ^= wymix(seed ^ secret.first(), secret.second());
+    pub const fn new_with_secret(mut seed: u64, secret: [u64; 4]) -> Self {
+        seed ^= wymix(seed ^ secret[0], secret[1]);
 
         WyHash {
             seed,
@@ -95,21 +100,21 @@ impl WyHash {
             let mut start = 0;
             let mut seed = self.seed;
 
-            if length >= 48 {
+            if is_over_48_bytes(length) {
                 let mut seed1 = seed;
                 let mut seed2 = seed;
 
-                while index >= 48 {
+                while is_over_48_bytes(index) {
                     seed = wymix(
-                        read_8_bytes(&bytes[start..]) ^ self.secret.second(),
+                        read_8_bytes(&bytes[start..]) ^ self.secret[1],
                         read_8_bytes(&bytes[start + 8..]) ^ seed,
                     );
                     seed1 = wymix(
-                        read_8_bytes(&bytes[start + 16..]) ^ self.secret.third(),
+                        read_8_bytes(&bytes[start + 16..]) ^ self.secret[2],
                         read_8_bytes(&bytes[start + 24..]) ^ seed1,
                     );
                     seed2 = wymix(
-                        read_8_bytes(&bytes[start + 32..]) ^ self.secret.fourth(),
+                        read_8_bytes(&bytes[start + 32..]) ^ self.secret[3],
                         read_8_bytes(&bytes[start + 40..]) ^ seed2,
                     );
                     index -= 48;
@@ -121,7 +126,7 @@ impl WyHash {
 
             while index > 16 {
                 seed = wymix(
-                    read_8_bytes(&bytes[start..]) ^ self.secret.second(),
+                    read_8_bytes(&bytes[start..]) ^ self.secret[1],
                     read_8_bytes(&bytes[start + 8..]) ^ seed,
                 );
                 index -= 16;
@@ -193,11 +198,8 @@ impl Hasher for WyHash {
 
     #[inline]
     fn finish(&self) -> u64 {
-        let (lo, hi) = wymul(self.lo ^ self.secret.second(), self.hi ^ self.seed);
-        wymix(
-            lo ^ self.secret.first() ^ self.size,
-            hi ^ self.secret.second(),
-        )
+        let (lo, hi) = wymul(self.lo ^ self.secret[1], self.hi ^ self.seed);
+        wymix(lo ^ self.secret[0] ^ self.size, hi ^ self.secret[1])
     }
 }
 
@@ -240,6 +242,20 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "v4_2"))]
+    #[rustfmt::skip]
+    const TEST_VECTORS: [(u64, &str); 8] = [
+        (0x0409_638e_e2bd_e459, ""),
+        (0xa841_2d09_1b5f_e0a9, "a"),
+        (0x32dd_92e4_b291_5153, "abc"),
+        (0x8619_1240_89a3_a16b, "message digest"),
+        (0x7a43_afb6_1d7f_5f40, "abcdefghijklmnopqrstuvwxyz"),
+        (0xff42_329b_90e5_0d58, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"),
+        (0xc39c_ab13_b115_aad3, "12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+        (0xe44a_846b_fc65_00cd, "123456789012345678901234567890123456789012345678"),
+    ];
+
+    #[cfg(feature = "v4_2")]
     #[rustfmt::skip]
     const TEST_VECTORS: [(u64, &str); 8] = [
         (0x9322_8a4d_e0ee_c5a2, ""),
