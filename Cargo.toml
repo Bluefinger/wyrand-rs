@@ -18,13 +18,13 @@ rust-version = "1.70.0"
 debug = []
 default = ["rand_core", "debug"]
 hash = []
+legacy_v4 = []
 rand_core = ["dep:rand_core"]
 serde1 = ["dep:serde"]
 wyhash = []
 randomised_wyhash = ["wyhash", "dep:getrandom"]
 fully_randomised_wyhash = ["randomised_wyhash"]
 threadrng_wyhash = ["dep:rand", "randomised_wyhash"]
-v4_2 = []
 
 [dependencies]
 getrandom = { version = "0.2", optional = true }
