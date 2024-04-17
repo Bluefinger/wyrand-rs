@@ -1,7 +1,7 @@
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
 
-use crate::constants::{WY0, WY1};
+use super::constants::{WY0, WY1};
 #[cfg(feature = "rand_core")]
 use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng};
 
@@ -9,17 +9,18 @@ use crate::utils::wymix;
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-/// A Pseudorandom Number generator, powered by the `wyrand` algorithm.
+/// A Pseudorandom Number generator, powered by the `wyrand` algorithm. This generator
+/// is based on the legacy final v4 reference implementation.
 #[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "hash", derive(Hash))]
 #[repr(transparent)]
-pub struct WyRand {
+pub struct WyRandLegacy {
     state: u64,
 }
 
-impl WyRand {
-    /// Creates a new [`WyRand`] instance with the provided seed. Be sure
+impl WyRandLegacy {
+    /// Creates a new [`WyRandLegacy`] instance with the provided seed. Be sure
     /// to obtain the seed value from a good entropy source, either from
     /// hardware, OS source, or from a suitable crate, like `getrandom`.
     #[inline]
@@ -36,14 +37,14 @@ impl WyRand {
         value
     }
 
-    /// Const [`WyRand`] generator. Generates and returns a random [`u64`] value first
+    /// Const [`WyRandLegacy`] generator. Generates and returns a random [`u64`] value first
     /// and then the advanced state second.
     /// ```
-    /// use wyrand::WyRand;
+    /// use wyrand::legacy_final_v4::WyRandLegacy;
     ///
     /// let seed = 123;
     ///
-    /// let (random_value, new_state) = WyRand::gen_u64(seed);
+    /// let (random_value, new_state) = WyRandLegacy::gen_u64(seed);
     ///
     /// assert_ne!(random_value, 0);
     /// // The original seed now no longer matches the new state.
@@ -57,14 +58,14 @@ impl WyRand {
 }
 
 #[cfg(feature = "debug")]
-impl Debug for WyRand {
+impl Debug for WyRandLegacy {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("WyRand").finish()
+        f.debug_struct("WyRandLegacy").finish()
     }
 }
 
 #[cfg(feature = "rand_core")]
-impl RngCore for WyRand {
+impl RngCore for WyRandLegacy {
     #[inline]
     fn next_u32(&mut self) -> u32 {
         self.rand() as u32
@@ -88,7 +89,7 @@ impl RngCore for WyRand {
 }
 
 #[cfg(feature = "rand_core")]
-impl SeedableRng for WyRand {
+impl SeedableRng for WyRandLegacy {
     type Seed = [u8; core::mem::size_of::<u64>()];
 
     fn from_seed(seed: Self::Seed) -> Self {
@@ -107,18 +108,18 @@ mod tests {
     fn no_leaking_debug() {
         use alloc::format;
 
-        let rng = WyRand::new(Default::default());
+        let rng = WyRandLegacy::new(Default::default());
 
         assert_eq!(
             format!("{rng:?}"),
-            "WyRand",
+            "WyRandLegacy",
             "Debug should not be leaking internal state"
         );
     }
 
     #[test]
     fn clone_rng() {
-        let rng = WyRand::new(Default::default());
+        let rng = WyRandLegacy::new(Default::default());
 
         let mut cloned = rng.clone();
 
@@ -148,18 +149,10 @@ mod tests {
             r.next_u32()
         }
 
-        let mut rng = WyRand::from_seed(Default::default());
+        let mut rng = WyRandLegacy::from_seed(Default::default());
 
-        #[cfg(not(feature = "v4_2"))]
-        {
-            assert_eq!(rand_generic(&mut rng), 2_405_016_974);
-            assert_eq!(rand_dyn(&mut rng), 4_283_336_045);
-        }
-        #[cfg(feature = "v4_2")]
-        {
-            assert_eq!(rand_generic(&mut rng), 2_371_481_814);
-            assert_eq!(rand_dyn(&mut rng), 412_509_173);
-        }
+        assert_eq!(rand_generic(&mut rng), 2_405_016_974);
+        assert_eq!(rand_dyn(&mut rng), 4_283_336_045);
     }
 
     #[cfg(all(feature = "serde1", feature = "debug"))]
@@ -168,13 +161,13 @@ mod tests {
         use serde_test::{assert_tokens, Token};
 
         let seed = 12345;
-        let rng = WyRand::new(seed);
+        let rng = WyRandLegacy::new(seed);
 
         assert_tokens(
             &rng,
             &[
                 Token::Struct {
-                    name: "WyRand",
+                    name: "WyRandLegacy",
                     len: 1,
                 },
                 Token::BorrowedStr("state"),
@@ -190,7 +183,7 @@ mod tests {
     fn hash() {
         use core::hash::{Hash, Hasher, SipHasher};
 
-        let rng = WyRand::new(123);
+        let rng = WyRandLegacy::new(123);
         let state: u64 = 123;
 
         let mut hasher = SipHasher::default();
