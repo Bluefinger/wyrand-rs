@@ -37,7 +37,7 @@ fn get_random_u64() -> u64 {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 /// Randomised state constructor for [`WyHash`]. This builder will source entropy in order
 /// to provide random seeds for [`WyHash`]. If the `fully_randomised_wyhash` feature is enabled,
 /// this will yield a hasher with not just a random seed, but also a new random secret,
@@ -75,7 +75,7 @@ impl RandomWyHashState {
         use super::constants::{WY0, WY1, WY2, WY3};
 
         #[cfg(feature = "fully_randomised_wyhash")]
-        let secret = *SECRET.get_or_init(|| make_secret(get_random_u64()));
+        let secret = SECRET.get_or_init(|| make_secret(get_random_u64())).clone();
         #[cfg(not(feature = "fully_randomised_wyhash"))]
         let secret = Secret::new(WY0, WY1, WY2, WY3);
 
@@ -115,7 +115,7 @@ impl BuildHasher for RandomWyHashState {
 
     #[inline]
     fn build_hasher(&self) -> Self::Hasher {
-        WyHash::new_with_secret(self.state, self.secret)
+        WyHash::new_with_secret(self.state, self.secret.clone())
     }
 }
 

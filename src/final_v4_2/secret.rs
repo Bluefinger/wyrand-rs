@@ -1,11 +1,12 @@
-use crate::{constants::C_VALUES, WyRand};
+use crate::{constants::C_VALUES, utils::check_for_valid_secret_value, WyRand};
 
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
 
 use super::primes::is_prime;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
+#[repr(align(32))]
 /// A wrapper struct for containing generated secrets to be used by the wyhash algorithm. Ensures it can't be used
 /// incorrectly, and can only be constructed by [`super::WyHash::make_secret`].
 pub struct Secret([u64; 4]);
@@ -55,7 +56,6 @@ pub(super) const fn make_secret(mut seed: u64) -> Secret {
         let mut ok: bool = false;
 
         while !ok {
-            ok = true;
             secret[i] = 0;
             let mut j: usize = 0;
 
@@ -68,20 +68,7 @@ pub(super) const fn make_secret(mut seed: u64) -> Secret {
                 j += 8;
             }
 
-            if secret[i] % 2 == 0 {
-                ok = false;
-                continue;
-            }
-
-            let mut j: usize = 0;
-
-            while j < i {
-                if (secret[j] ^ secret[i]).count_ones() != 32 {
-                    ok = false;
-                    break;
-                }
-                j += 1;
-            }
+            ok = check_for_valid_secret_value(i, &secret);
 
             if ok && !is_prime(secret[i]) {
                 ok = false;

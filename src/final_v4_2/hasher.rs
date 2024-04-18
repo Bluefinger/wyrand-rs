@@ -47,7 +47,7 @@ pub struct WyHash {
 impl WyHash {
     /// Create suitable secret values to be used by the hasher.
     #[must_use]
-    #[inline]
+    #[inline(always)]
     pub fn make_secret(seed: u64) -> Secret {
         make_secret(seed)
     }
