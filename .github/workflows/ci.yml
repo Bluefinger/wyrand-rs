@@ -35,13 +35,10 @@ jobs:
       - name: Run cargo check
         run: cargo check --all --all-features --all-targets
         if: startsWith(matrix.rust, 'nightly')
-      - name: Run cargo check (without dev-dependencies to catch missing feature flags)
-        if: startsWith(matrix.rust, 'nightly')
-        run: cargo check -Z features=dev_dep
-      - name: Full feature + v4.2 testing
+      - name: Full feature testing
         run: cargo test --all-features
-      - name: v4 compatibility testing
-        run: cargo test --no-default-features --features debug,rand_core,wyhash,randomised_wyhash
+      - name: No default compatibility testing
+        run: cargo test --no-default-features --features debug,rand_core,wyhash
   
   msrv:
     runs-on: ubuntu-latest

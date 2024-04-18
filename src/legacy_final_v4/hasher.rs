@@ -1,37 +1,26 @@
-#[cfg(feature = "randomised_wyhash")]
-mod builder;
-#[cfg(feature = "v4_2")]
-mod primes;
-mod read;
-mod secret;
-
 use core::hash::Hasher;
-
-#[cfg(feature = "randomised_wyhash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "randomised_wyhash")))]
-pub use builder::RandomWyHashState;
 
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
 
 use crate::{
-    constants::{WY0, WY1, WY2, WY3},
+    read::{read_4_bytes, read_8_bytes, read_upto_3_bytes},
     utils::{wymix, wymul},
 };
 
-use self::read::{is_over_48_bytes, read_4_bytes, read_8_bytes, read_upto_3_bytes};
-
-pub use self::secret::make_secret;
+use super::{
+    constants::{WY0, WY1, WY2, WY3},
+    secret::{make_secret_legacy, LegacySecret},
+};
 
 /// The WyHash hasher, a fast & portable hashing algorithm. This implementation is
-/// based on the final v4/v4.2 C reference implementations (depending on whether the
-/// `v4_2` feature flag is enabled or not).
+/// based on the legacy final v4 reference implementation.
 ///
 /// ```
-/// use wyrand::WyHash;
+/// use wyrand::legacy_final_v4::WyHashLegacy;
 /// use core::hash::Hasher;
 ///
-/// let mut hasher = WyHash::default();
+/// let mut hasher = WyHashLegacy::default();
 ///
 /// hasher.write_u64(5);
 ///
@@ -46,35 +35,41 @@ pub use self::secret::make_secret;
 /// Any other sequence of events (including calls to `write_u32` or similar functions) are
 /// guaranteed to have consistent results between platforms and versions of this crate, but may not
 /// map well to the reference implementation.
-#[cfg_attr(docsrs, doc(cfg(feature = "wyhash")))]
 #[derive(Clone)]
-pub struct WyHash {
+pub struct WyHashLegacy {
     seed: u64,
     lo: u64,
     hi: u64,
     size: u64,
-    secret: [u64; 4],
+    secret: LegacySecret,
 }
 
-impl WyHash {
+impl WyHashLegacy {
+    /// Create suitable secret values to be used by the hasher.
+    #[must_use]
+    #[inline]
+    pub fn make_secret(seed: u64) -> LegacySecret {
+        make_secret_legacy(seed)
+    }
+
     /// Create hasher with seeds for the state and secret (generates a new secret, expensive to compute).
     pub const fn new(seed: u64, secret_seed: u64) -> Self {
-        Self::new_with_secret(seed, make_secret(secret_seed))
+        Self::new_with_secret(seed, make_secret_legacy(secret_seed))
     }
 
     /// Create hasher with a seed and default secrets
     #[inline]
     pub const fn new_with_default_secret(seed: u64) -> Self {
-        Self::new_with_secret(seed, [WY0, WY1, WY2, WY3])
+        Self::new_with_secret(seed, LegacySecret::new(WY0, WY1, WY2, WY3))
     }
 
-    /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`make_secret`],
+    /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`WyHashLegacy::make_secret`],
     /// else the hashing output will be weak/vulnerable.
     #[inline]
-    pub const fn new_with_secret(mut seed: u64, secret: [u64; 4]) -> Self {
-        seed ^= wymix(seed ^ secret[0], secret[1]);
+    pub const fn new_with_secret(mut seed: u64, secret: LegacySecret) -> Self {
+        seed ^= wymix(seed ^ secret.first(), secret.second());
 
-        WyHash {
+        WyHashLegacy {
             seed,
             lo: 0,
             hi: 0,
@@ -100,21 +95,21 @@ impl WyHash {
             let mut start = 0;
             let mut seed = self.seed;
 
-            if is_over_48_bytes(length) {
+            if length > 48 {
                 let mut seed1 = seed;
                 let mut seed2 = seed;
 
-                while is_over_48_bytes(index) {
+                while index > 48 {
                     seed = wymix(
-                        read_8_bytes(&bytes[start..]) ^ self.secret[1],
+                        read_8_bytes(&bytes[start..]) ^ self.secret.second(),
                         read_8_bytes(&bytes[start + 8..]) ^ seed,
                     );
                     seed1 = wymix(
-                        read_8_bytes(&bytes[start + 16..]) ^ self.secret[2],
+                        read_8_bytes(&bytes[start + 16..]) ^ self.secret.third(),
                         read_8_bytes(&bytes[start + 24..]) ^ seed1,
                     );
                     seed2 = wymix(
-                        read_8_bytes(&bytes[start + 32..]) ^ self.secret[3],
+                        read_8_bytes(&bytes[start + 32..]) ^ self.secret.fourth(),
                         read_8_bytes(&bytes[start + 40..]) ^ seed2,
                     );
                     index -= 48;
@@ -126,7 +121,7 @@ impl WyHash {
 
             while index > 16 {
                 seed = wymix(
-                    read_8_bytes(&bytes[start..]) ^ self.secret[1],
+                    read_8_bytes(&bytes[start..]) ^ self.secret.second(),
                     read_8_bytes(&bytes[start + 8..]) ^ seed,
                 );
                 index -= 16;
@@ -147,7 +142,7 @@ impl WyHash {
     }
 }
 
-impl Hasher for WyHash {
+impl Hasher for WyHashLegacy {
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
         self.mix_current_seed();
@@ -198,23 +193,26 @@ impl Hasher for WyHash {
 
     #[inline]
     fn finish(&self) -> u64 {
-        let (lo, hi) = wymul(self.lo ^ self.secret[1], self.hi ^ self.seed);
-        wymix(lo ^ self.secret[0] ^ self.size, hi ^ self.secret[1])
+        let (lo, hi) = wymul(self.lo ^ self.secret.second(), self.hi ^ self.seed);
+        wymix(
+            lo ^ self.secret.first() ^ self.size,
+            hi ^ self.secret.second(),
+        )
     }
 }
 
-impl Default for WyHash {
+impl Default for WyHashLegacy {
     #[inline]
     fn default() -> Self {
-        WyHash::new_with_default_secret(0)
+        WyHashLegacy::new_with_default_secret(0)
     }
 }
 
 #[cfg(feature = "debug")]
-impl Debug for WyHash {
+impl Debug for WyHashLegacy {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // Do not expose the internal state of the Hasher
-        f.debug_struct("WyHash")
+        f.debug_struct("WyHashLegacy")
             .field("size", &self.size)
             .finish_non_exhaustive()
     }
@@ -233,16 +231,15 @@ mod tests {
     fn no_leaking_debug() {
         use alloc::format;
 
-        let rng = WyHash::default();
+        let rng = WyHashLegacy::default();
 
         assert_eq!(
             format!("{rng:?}"),
-            "WyHash { size: 0, .. }",
+            "WyHashLegacy { size: 0, .. }",
             "Debug should not be leaking sensitive internal state"
         );
     }
 
-    #[cfg(not(feature = "v4_2"))]
     #[rustfmt::skip]
     const TEST_VECTORS: [(u64, &str); 8] = [
         (0x0409_638e_e2bd_e459, ""),
@@ -255,26 +252,13 @@ mod tests {
         (0xe44a_846b_fc65_00cd, "123456789012345678901234567890123456789012345678"),
     ];
 
-    #[cfg(feature = "v4_2")]
-    #[rustfmt::skip]
-    const TEST_VECTORS: [(u64, &str); 8] = [
-        (0x9322_8a4d_e0ee_c5a2, ""),
-        (0xc5ba_c3db_1787_13c4, "a"),
-        (0xa97f_2f7b_1d9b_3314, "abc"),
-        (0x786d_1f1d_f380_1df4, "message digest"),
-        (0xdca5_a813_8ad3_7c87, "abcdefghijklmnopqrstuvwxyz"),
-        (0xb9e7_34f1_17cf_af70, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"),
-        (0x6cc5_eab4_9a92_d617, "12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
-        (0xe1d4_c58d_97ba_df5e, "123456789012345678901234567890123456789012345678"),
-    ];
-
     #[test]
     fn expected_hasher_output() {
         TEST_VECTORS
             .into_iter()
             .enumerate()
             .map(|(seed, (expected, input))| {
-                let mut hasher = WyHash::new_with_default_secret(seed as u64);
+                let mut hasher = WyHashLegacy::new_with_default_secret(seed as u64);
 
                 hasher.write(input.as_bytes());
 
@@ -291,12 +275,12 @@ mod tests {
 
     #[test]
     fn multiple_writes_no_collision() {
-        let mut hasher = WyHash::new_with_default_secret(0);
+        let mut hasher = WyHashLegacy::new_with_default_secret(0);
         hasher.write(b"abcdef");
         hasher.write(b"abcdef");
         let hash_a = hasher.finish();
 
-        let mut hasher = WyHash::new_with_default_secret(0);
+        let mut hasher = WyHashLegacy::new_with_default_secret(0);
         hasher.write(b"abcdeF");
         hasher.write(b"abcdef");
         let hash_b = hasher.finish();
@@ -306,11 +290,11 @@ mod tests {
 
     #[test]
     fn tuples_no_collision() {
-        let mut hasher = WyHash::new_with_default_secret(0);
+        let mut hasher = WyHashLegacy::new_with_default_secret(0);
         (1000, 2000).hash(&mut hasher);
         let hash_a = hasher.finish();
 
-        let mut hasher = WyHash::new_with_default_secret(0);
+        let mut hasher = WyHashLegacy::new_with_default_secret(0);
         (1500, 2000).hash(&mut hasher);
         let hash_b = hasher.finish();
 

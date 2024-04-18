@@ -24,7 +24,7 @@ wyhash = []
 randomised_wyhash = ["wyhash", "dep:getrandom"]
 fully_randomised_wyhash = ["randomised_wyhash"]
 threadrng_wyhash = ["dep:rand", "randomised_wyhash"]
-v4_2 = []
+legacy_v4 = []
 
 [dependencies]
 getrandom = { version = "0.2", optional = true }
