@@ -63,7 +63,7 @@ impl WyHash {
         Self::new_with_secret(seed, Secret::new(WY0, WY1, WY2, WY3))
     }
 
-    /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`make_secret`],
+    /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`WyHash::make_secret`],
     /// else the hashing output will be weak/vulnerable.
     #[inline]
     pub const fn new_with_secret(mut seed: u64, secret: Secret) -> Self {

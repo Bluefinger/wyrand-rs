@@ -3,10 +3,6 @@
 
 use core::hash::Hasher;
 
-// #[cfg(feature = "randomised_wyhash")]
-// #[cfg_attr(docsrs, doc(cfg(feature = "randomised_wyhash")))]
-// pub use builder::RandomWyHashState;
-
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
 
@@ -70,10 +66,10 @@ impl WyHashLegacy {
         Self::new_with_secret(seed, LegacySecret::new(WY0, WY1, WY2, WY3))
     }
 
-    /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`make_secret`],
+    /// Create hasher with a seed value and a secret. Assumes the user created the secret with [`WyHashLegacy::make_secret`],
     /// else the hashing output will be weak/vulnerable.
     #[inline]
-    pub(super) const fn new_with_secret(mut seed: u64, secret: LegacySecret) -> Self {
+    pub const fn new_with_secret(mut seed: u64, secret: LegacySecret) -> Self {
         seed ^= wymix(seed ^ secret.first(), secret.second());
 
         WyHashLegacy {
