@@ -69,10 +69,10 @@ impl RandomWyHashState {
     #[must_use]
     #[inline]
     pub fn new() -> Self {
-        #[cfg(feature = "fully_randomised_wyhash")]
-        use super::secret::make_secret;
         #[cfg(not(feature = "fully_randomised_wyhash"))]
         use super::constants::{WY0, WY1, WY2, WY3};
+        #[cfg(feature = "fully_randomised_wyhash")]
+        use super::secret::make_secret;
 
         #[cfg(feature = "fully_randomised_wyhash")]
         let secret = SECRET.get_or_init(|| make_secret(get_random_u64())).clone();

@@ -1,6 +1,3 @@
-// #[cfg(feature = "randomised_wyhash")]
-// mod builder;
-
 use core::hash::Hasher;
 
 #[cfg(feature = "debug")]
