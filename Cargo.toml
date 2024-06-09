@@ -1,6 +1,6 @@
 [package]
 name = "wyrand"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
 description = "A fast & portable non-cryptographic pseudorandom number generator and hashing algorithm"
