@@ -98,7 +98,7 @@ impl SeedableRng for WyRand {
     }
 
     #[inline]
-    fn from_rng<R: RngCore>(mut rng: R) -> Result<Self, rand::Error> {
+    fn from_rng<R: RngCore>(mut rng: R) -> Result<Self, rand_core::Error> {
        Ok(Self::new(rng.next_u64())) 
     }
 }
