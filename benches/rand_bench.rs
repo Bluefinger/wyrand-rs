@@ -1,7 +1,8 @@
 use criterion::{black_box, criterion_main, Criterion};
 
 fn wyrand_benchmark(c: &mut Criterion) {
-    use rand_core::RngCore;
+    use rand::thread_rng;
+    use rand_core::{RngCore, SeedableRng};
     use wyrand::WyRand;
 
     c.bench_function("rand", |b| {
@@ -28,6 +29,10 @@ fn wyrand_benchmark(c: &mut Criterion) {
             },
             criterion::BatchSize::LargeInput,
         )
+    });
+
+    c.bench_function("from_rng", |b| {
+        b.iter(|| black_box(WyRand::from_rng(thread_rng())))
     });
 }
 

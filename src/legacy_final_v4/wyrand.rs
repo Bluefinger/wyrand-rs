@@ -92,8 +92,14 @@ impl RngCore for WyRandLegacy {
 impl SeedableRng for WyRandLegacy {
     type Seed = [u8; core::mem::size_of::<u64>()];
 
+    #[inline]
     fn from_seed(seed: Self::Seed) -> Self {
         Self::new(u64::from_ne_bytes(seed))
+    }
+
+    #[inline]
+    fn from_rng<R: RngCore>(mut rng: R) -> Result<Self, rand_core::Error> {
+       Ok(Self::new(rng.next_u64())) 
     }
 }
 
@@ -153,6 +159,16 @@ mod tests {
 
         assert_eq!(rand_generic(&mut rng), 2_405_016_974);
         assert_eq!(rand_dyn(&mut rng), 4_283_336_045);
+    }
+
+    #[cfg(feature = "rand_core")]
+    #[test]
+    fn rand_core_from_rng() {
+        let mut source = WyRandLegacy::from_seed(Default::default());
+
+        let mut rng = WyRandLegacy::from_rng(&mut source).expect("from_rng should never fail here");
+
+        assert_eq!(rng.next_u32(), 4242651740);
     }
 
     #[cfg(all(feature = "serde1", feature = "debug"))]
