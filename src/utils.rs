@@ -33,6 +33,7 @@ pub(crate) const fn check_for_valid_secret_value(current_value: usize, secret: &
     true
 }
 
+#[cfg(feature = "randomised_wyhash")]
 #[inline]
 pub(crate) fn get_random_u64() -> u64 {
     #[cfg(not(feature = "threadrng_wyhash"))]
