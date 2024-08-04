@@ -6,35 +6,18 @@ use core::fmt::Debug;
 #[cfg(feature = "fully_randomised_wyhash")]
 use std::sync::OnceLock;
 
+use crate::utils::get_random_u64;
+
 use super::{secret::Secret, WyHash};
 
 #[cfg(feature = "fully_randomised_wyhash")]
 static SECRET: OnceLock<Secret> = OnceLock::new();
 
 #[inline]
-fn get_random_u64() -> u64 {
-    #[cfg(not(feature = "threadrng_wyhash"))]
-    {
-        const SIZE: usize = core::mem::size_of::<u64>();
+fn gen_new_secret() -> Secret {
+    use super::secret::make_secret;
 
-        let mut state = [0; SIZE];
-
-        // Don't bother trying to handle the result. If we can't obtain
-        // entropy with getrandom, then there is no hope and we might as
-        // well panic. It is up to the user to ensure getrandom is configured
-        // correctly for their platform.
-        getrandom::getrandom(&mut state)
-            .expect("Failed to source entropy for WyHash randomised state");
-
-        u64::from_ne_bytes(state)
-    }
-    #[cfg(feature = "threadrng_wyhash")]
-    {
-        use rand::RngCore;
-
-        // This is faster than doing `.fill_bytes()`. User-space entropy goes brrr.
-        rand::thread_rng().next_u64()
-    }
+    make_secret(get_random_u64())
 }
 
 #[derive(Clone)]
@@ -71,11 +54,9 @@ impl RandomWyHashState {
     pub fn new() -> Self {
         #[cfg(not(feature = "fully_randomised_wyhash"))]
         use super::constants::{WY0, WY1, WY2, WY3};
-        #[cfg(feature = "fully_randomised_wyhash")]
-        use super::secret::make_secret;
 
         #[cfg(feature = "fully_randomised_wyhash")]
-        let secret = SECRET.get_or_init(|| make_secret(get_random_u64())).clone();
+        let secret = SECRET.get_or_init(gen_new_secret).clone();
         #[cfg(not(feature = "fully_randomised_wyhash"))]
         let secret = Secret::new(WY0, WY1, WY2, WY3);
 
