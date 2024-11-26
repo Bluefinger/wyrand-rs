@@ -56,6 +56,6 @@ pub(crate) fn get_random_u64() -> u64 {
         use rand_core::RngCore;
 
         // This is faster than doing `.fill_bytes()`. User-space entropy goes brrr.
-        rand::thread_rng().next_u64()
+        rand::rng().next_u64()
     }
 }

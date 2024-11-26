@@ -92,12 +92,12 @@ impl SeedableRng for WyRandLegacy {
     }
 
     #[inline]
-    fn from_rng(mut rng: impl RngCore) -> Self {
+    fn from_rng(rng: &mut impl RngCore) -> Self {
         Self::new(rng.next_u64())
     }
 
     #[inline]
-    fn try_from_rng<R: TryRngCore>(mut rng: R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: TryRngCore>(rng: &mut R) -> Result<Self, R::Error> {
         Ok(Self::new(rng.try_next_u64()?))
     }
 }
