@@ -27,15 +27,15 @@ threadrng_wyhash = ["dep:rand", "randomised_wyhash"]
 legacy_v4 = []
 
 [dependencies]
-getrandom = { version = "0.2", optional = true }
-rand = { version = "=0.9.0-beta.0", optional = true }
-rand_core = { version = "=0.9.0-beta.0", default-features = false, optional = true }
+getrandom = { version = "=0.3.0-rc.0", optional = true }
+rand = { version = "=0.9.0-beta.1", optional = true }
+rand_core = { version = "=0.9.0-beta.1", default-features = false, optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
 serde_test = "1.0"
-rand = "=0.9.0-beta.0"
+rand = "=0.9.0-beta.1"
 
 [[bench]]
 name = "rand_bench"

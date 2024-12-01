@@ -13,6 +13,7 @@ use super::{secret::Secret, WyHash};
 #[cfg(feature = "fully_randomised_wyhash")]
 static SECRET: OnceLock<Secret> = OnceLock::new();
 
+#[cfg(feature = "fully_randomised_wyhash")]
 #[inline]
 fn gen_new_secret() -> Secret {
     use super::secret::make_secret;

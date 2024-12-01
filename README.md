@@ -36,17 +36,20 @@ The crate will always export `WyRand` and will do so when set as `default-featur
 - **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
 - **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
 - **`randomised_wyhash`** - Enables `RandomWyHashState`, a means to source a randomised state for `WyHash` for use in collections like `HashMap`/`HashSet`. Enables `wyhash` feature if it is not already enabled.
-- **`fully_randomised_wyhash`** - Randomises not just the seed for `RandomWyHashState`, but also the secret. The new secret is generated once per runtime, and then is used for every subsequent new `WyHash` (with each `WyHash` instance having its own unique seed). Enables `randomised_wyhash` if not already enabled, and requires `std` environments.
-- **`threadrng_wyhash`** - Enables sourcing entropy from `rand`'s `thread_rng()` method. Much quicker than `getrandom`. Enables `randomised_wyhash` if not already enabled. Requires `std` environments.
 - **`legacy_v4`** - Exposes the legacy PRNG/Hashing algorithms that use the final v4 implementation.
+
+Below are **application only features**, meant only to be enabled by app/bin crates, **NOT** lib crates as this changes runtime behaviour and also can pull in crates that change whether this crate can compile for `no-std` environments or not:
+
+- **`fully_randomised_wyhash`** - Randomises not just the seed for `RandomWyHashState`, but also the secret. The new secret is generated once per runtime, and then is used for every subsequent new `WyHash` (with each `WyHash` instance having its own unique seed). Enables `randomised_wyhash` if not already enabled, and requires `std` environments. ONLY FOR BIN CRATES.
+- **`threadrng_wyhash`** - Enables sourcing entropy from `rand`'s `thread_rng()` method. Much quicker than `getrandom`. Enables `randomised_wyhash` if not already enabled. Requires `std` environments. ONLY FOR BIN CRATES.
 
 ## Building for WASM/Web
 
-If you are using `WyRand` with `rand_core` and/or `WyHash` with `randomised_wyhash` then for building for the web/WASM, you'll need to configure `getrandom` to make use of the browser APIs in order to source entropy from. Add the following to your project `Cargo.toml` if your WASM builds target the web:
+If you are using `WyRand` with `rand_core` and/or `WyHash` with `randomised_wyhash` then for building for the web/WASM, you'll need to configure `getrandom` and its backend to make use of the browser APIs in order to source entropy from. Add the following to your project `.cargo/config.toml` if your WASM builds target the web:
 
 ```toml
-[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-getrandom = { version = "0.2", features = ["js"] }
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
 ```
 
 ## License
