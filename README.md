@@ -45,7 +45,14 @@ Below are **application only features**, meant only to be enabled by app/bin cra
 
 ## Building for WASM/Web
 
-If you are using `WyRand` with `rand_core` and/or `WyHash` with `randomised_wyhash` then for building for the web/WASM, you'll need to configure `getrandom` and its backend to make use of the browser APIs in order to source entropy from. Add the following to your project `.cargo/config.toml` if your WASM builds target the web:
+If you are using `WyRand` with `rand_core` and/or `WyHash` with `randomised_wyhash` then for building for the web/WASM, you'll need to configure `getrandom` and its backend to make use of the browser APIs in order to source entropy from. If your WASM builds target the web, enable the `wasm_js` feature for `getrandom` in `Cargo.toml`:
+
+```toml
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { version = "0.3", features = ["wasm_js"] }
+```
+
+and then add the following to your project `.cargo/config.toml`:
 
 ```toml
 [target.wasm32-unknown-unknown]
