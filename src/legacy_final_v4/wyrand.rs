@@ -3,7 +3,7 @@ use core::fmt::Debug;
 
 use super::constants::{WY0, WY1};
 #[cfg(feature = "rand_core")]
-use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng};
+use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng, TryRngCore};
 
 use crate::utils::wymix;
 #[cfg(feature = "serde1")]
@@ -80,12 +80,6 @@ impl RngCore for WyRandLegacy {
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         fill_bytes_via_next(self, dest);
     }
-
-    #[inline]
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        self.fill_bytes(dest);
-        Ok(())
-    }
 }
 
 #[cfg(feature = "rand_core")]
@@ -98,8 +92,13 @@ impl SeedableRng for WyRandLegacy {
     }
 
     #[inline]
-    fn from_rng<R: RngCore>(mut rng: R) -> Result<Self, rand_core::Error> {
-       Ok(Self::new(rng.next_u64())) 
+    fn from_rng(rng: &mut impl RngCore) -> Self {
+        Self::new(rng.next_u64())
+    }
+
+    #[inline]
+    fn try_from_rng<R: TryRngCore>(rng: &mut R) -> Result<Self, R::Error> {
+        Ok(Self::new(rng.try_next_u64()?))
     }
 }
 
@@ -166,7 +165,7 @@ mod tests {
     fn rand_core_from_rng() {
         let mut source = WyRandLegacy::from_seed(Default::default());
 
-        let mut rng = WyRandLegacy::from_rng(&mut source).expect("from_rng should never fail here");
+        let mut rng = WyRandLegacy::from_rng(&mut source);
 
         assert_eq!(rng.next_u32(), 4242651740);
     }

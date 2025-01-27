@@ -32,3 +32,23 @@ pub(crate) const fn check_for_valid_secret_value(current_value: usize, secret: &
 
     true
 }
+
+#[cfg(feature = "randomised_wyhash")]
+#[inline]
+pub(crate) fn get_random_u64() -> u64 {
+    #[cfg(not(feature = "threadrng_wyhash"))]
+    {
+        // Don't bother trying to handle the result. If we can't obtain
+        // entropy with getrandom, then there is no hope and we might as
+        // well panic. It is up to the user to ensure getrandom is configured
+        // correctly for their platform.
+        getrandom::u64().expect("Failed to source entropy for WyHash randomised state")
+    }
+    #[cfg(feature = "threadrng_wyhash")]
+    {
+        use rand_core::RngCore;
+
+        // This is faster than doing `.fill_bytes()`. User-space entropy goes brrr.
+        rand::rng().next_u64()
+    }
+}

@@ -1,6 +1,6 @@
 [package]
 name = "wyrand"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
 description = "A fast & portable non-cryptographic pseudorandom number generator and hashing algorithm"
@@ -27,15 +27,15 @@ threadrng_wyhash = ["dep:rand", "randomised_wyhash"]
 legacy_v4 = []
 
 [dependencies]
-getrandom = { version = "0.2", optional = true }
-rand = { version = "0.8", optional = true }
-rand_core = { version = "0.6", default-features = false, optional = true }
+getrandom = { version = "0.3.0", optional = true }
+rand = { version = "0.9.0", optional = true }
+rand_core = { version = "0.9.0", default-features = false, optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
 serde_test = "1.0"
-rand = "0.8"
+rand = "0.9.0"
 
 [[bench]]
 name = "rand_bench"
