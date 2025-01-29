@@ -6,6 +6,7 @@ use super::WyRandLegacy;
 use core::fmt::Debug;
 
 #[derive(Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[repr(align(32))]
 /// A wrapper struct for containing generated secrets to be used by the wyhash algorithm. Ensures it can't be used
 /// incorrectly, and can only be constructed by [`super::WyHashLegacy::make_secret`].

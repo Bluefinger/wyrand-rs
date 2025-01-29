@@ -36,6 +36,7 @@ use super::{
 /// guaranteed to have consistent results between platforms and versions of this crate, but may not
 /// map well to the reference implementation.
 #[derive(Clone)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 pub struct WyHash {
     seed: u64,
     lo: u64,

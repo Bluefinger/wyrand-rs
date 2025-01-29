@@ -6,6 +6,7 @@ use core::fmt::Debug;
 use super::primes::is_prime;
 
 #[derive(Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 #[repr(align(32))]
 /// A wrapper struct for containing generated secrets to be used by the wyhash algorithm. Ensures it can't be used
 /// incorrectly, and can only be constructed by [`super::WyHash::make_secret`].
