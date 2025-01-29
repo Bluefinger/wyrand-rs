@@ -22,6 +22,7 @@ fn gen_new_secret() -> LegacySecret {
 }
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 /// Randomised state constructor for [`WyHashLegacy`]. This builder will source entropy in order
 /// to provide random seeds for [`WyHashLegacy`]. If the `fully_randomised_wyhash` feature is enabled,
 /// this will yield a hasher with not just a random seed, but also a new random secret,
