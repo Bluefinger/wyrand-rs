@@ -136,7 +136,7 @@ impl WyHash {
     }
 
     #[inline]
-    fn mix_current_seed(&mut self) {
+    const fn mix_current_seed(&mut self) {
         if self.size != 0 {
             self.seed = wymix(self.lo, self.hi ^ self.seed);
         }

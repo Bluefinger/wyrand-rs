@@ -49,9 +49,10 @@ impl Debug for Secret {
 
 /// Generate new secret for wyhash. Takes a seed value and outputs an array of 4 suitable `u64` constants
 /// for use with the hasher. The PRNG will always use the default constants provided.
-pub(super) const fn make_secret(mut seed: u64) -> Secret {
+pub(super) const fn make_secret(seed: u64) -> Secret {
     let mut secret: [u64; 4] = [0; 4];
     let mut i: usize = 0;
+    let mut rng = WyRand::new(seed);
 
     while i < secret.len() {
         let mut ok: bool = false;
@@ -62,8 +63,7 @@ pub(super) const fn make_secret(mut seed: u64) -> Secret {
 
             while j < 64 {
                 // WyRand... but const!
-                let (value, new_state) = WyRand::gen_u64(seed);
-                seed = new_state;
+                let value = rng.rand();
                 let random_index = (value as usize) % C_VALUES.len();
                 secret[i] |= (C_VALUES[random_index] as u64) << j;
                 j += 8;

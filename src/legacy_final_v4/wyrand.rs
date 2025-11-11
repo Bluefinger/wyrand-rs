@@ -3,7 +3,7 @@ use core::fmt::Debug;
 
 use super::constants::{WY0, WY1};
 #[cfg(feature = "rand_core")]
-use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng, TryRngCore};
+use rand_core::{le::fill_bytes_via_next, RngCore, SeedableRng, TryRngCore};
 
 use crate::utils::wymix;
 #[cfg(feature = "serde1")]
@@ -31,7 +31,7 @@ impl WyRandLegacy {
 
     /// Generates a random [`u64`] value and advances the PRNG state.
     #[inline]
-    pub fn rand(&mut self) -> u64 {
+    pub const fn rand(&mut self) -> u64 {
         let (value, state) = Self::gen_u64(self.state);
         self.state = state;
         value
@@ -39,19 +39,8 @@ impl WyRandLegacy {
 
     /// Const [`WyRandLegacy`] generator. Generates and returns a random [`u64`] value first
     /// and then the advanced state second.
-    /// ```
-    /// use wyrand::legacy_final_v4::WyRandLegacy;
-    ///
-    /// let seed = 123;
-    ///
-    /// let (random_value, new_state) = WyRandLegacy::gen_u64(seed);
-    ///
-    /// assert_ne!(random_value, 0);
-    /// // The original seed now no longer matches the new state.
-    /// assert_ne!(new_state, seed);
-    /// ```
     #[inline(always)]
-    pub const fn gen_u64(mut seed: u64) -> (u64, u64) {
+    const fn gen_u64(mut seed: u64) -> (u64, u64) {
         seed = seed.wrapping_add(WY0);
         (wymix(seed, seed ^ WY1), seed)
     }
@@ -92,12 +81,12 @@ impl SeedableRng for WyRandLegacy {
     }
 
     #[inline]
-    fn from_rng(rng: &mut impl RngCore) -> Self {
+    fn from_rng<R: RngCore + ?Sized>(rng: &mut R) -> Self {
         Self::new(rng.next_u64())
     }
 
     #[inline]
-    fn try_from_rng<R: TryRngCore>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         Ok(Self::new(rng.try_next_u64()?))
     }
 }
