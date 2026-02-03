@@ -1,9 +1,11 @@
+#[cfg(feature = "rand_core")]
+use core::convert::Infallible;
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
 
 use super::constants::{WY0, WY1};
 #[cfg(feature = "rand_core")]
-use rand_core::{le::fill_bytes_via_next, RngCore, SeedableRng, TryRngCore};
+use rand_core::{Rng, SeedableRng, TryRng};
 
 use crate::utils::wymix;
 #[cfg(feature = "serde1")]
@@ -54,20 +56,19 @@ impl Debug for WyRandLegacy {
 }
 
 #[cfg(feature = "rand_core")]
-impl RngCore for WyRandLegacy {
-    #[inline]
-    fn next_u32(&mut self) -> u32 {
-        self.rand() as u32
+impl TryRng for WyRandLegacy {
+    type Error = Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
+        Ok(self.rand() as u32)
     }
 
-    #[inline]
-    fn next_u64(&mut self) -> u64 {
-        self.rand()
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        Ok(self.rand())
     }
 
-    #[inline]
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        fill_bytes_via_next(self, dest);
+    fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {
+        rand_core::utils::fill_bytes_via_next_word(dst, || self.try_next_u64())
     }
 }
 
@@ -81,12 +82,12 @@ impl SeedableRng for WyRandLegacy {
     }
 
     #[inline]
-    fn from_rng<R: RngCore + ?Sized>(rng: &mut R) -> Self {
+    fn from_rng<R: Rng + ?Sized>(rng: &mut R) -> Self {
         Self::new(rng.next_u64())
     }
 
     #[inline]
-    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         Ok(Self::new(rng.try_next_u64()?))
     }
 }
@@ -135,11 +136,11 @@ mod tests {
     #[cfg(feature = "rand_core")]
     #[test]
     fn rand_core_integration() {
-        fn rand_generic<R: RngCore>(mut r: R) -> u32 {
+        fn rand_generic<R: Rng>(mut r: R) -> u32 {
             r.next_u32()
         }
 
-        fn rand_dyn(r: &mut dyn RngCore) -> u32 {
+        fn rand_dyn(r: &mut dyn Rng) -> u32 {
             r.next_u32()
         }
 

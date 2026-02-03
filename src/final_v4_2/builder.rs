@@ -4,22 +4,18 @@ use core::hash::BuildHasher;
 use core::fmt::Debug;
 
 #[cfg(feature = "fully_randomised_wyhash")]
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 
 use crate::utils::get_random_u64;
 
 use super::{secret::Secret, WyHash};
 
 #[cfg(feature = "fully_randomised_wyhash")]
-static SECRET: OnceLock<Secret> = OnceLock::new();
-
-#[cfg(feature = "fully_randomised_wyhash")]
-#[inline]
-fn gen_new_secret() -> Secret {
+static SECRET: LazyLock<Secret> = LazyLock::new(|| {
     use super::secret::make_secret;
 
     make_secret(get_random_u64())
-}
+});
 
 #[derive(Clone)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
@@ -58,7 +54,7 @@ impl RandomWyHashState {
         use super::constants::{WY0, WY1, WY2, WY3};
 
         #[cfg(feature = "fully_randomised_wyhash")]
-        let secret = SECRET.get_or_init(gen_new_secret).clone();
+        let secret = SECRET.clone();
         #[cfg(not(feature = "fully_randomised_wyhash"))]
         let secret = Secret::new(WY0, WY1, WY2, WY3);
 
