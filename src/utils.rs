@@ -46,7 +46,7 @@ pub(crate) fn get_random_u64() -> u64 {
     }
     #[cfg(feature = "threadrng_wyhash")]
     {
-        use rand_core::RngCore;
+        use rand_core::Rng;
 
         // This is faster than doing `.fill_bytes()`. User-space entropy goes brrr.
         rand::rng().next_u64()

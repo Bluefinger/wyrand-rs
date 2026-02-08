@@ -2,7 +2,7 @@ use criterion::{black_box, criterion_main, Criterion};
 
 fn wyrand_benchmark(c: &mut Criterion) {
     use rand::rng;
-    use rand_core::{RngCore, SeedableRng};
+    use rand_core::{Rng, SeedableRng};
     use wyrand::WyRand;
 
     c.bench_function("rand", |b| {

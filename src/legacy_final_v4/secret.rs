@@ -49,12 +49,13 @@ impl Debug for LegacySecret {
 
 /// Generate new secret for legacy final v4 wyhash. Takes a seed value and outputs 4 suitable `u64` constants
 /// for use with the hasher. The PRNG will always use the default constants provided.
-pub(super) const fn make_secret_legacy(mut seed: u64) -> LegacySecret {
+pub(super) const fn make_secret_legacy(seed: u64) -> LegacySecret {
     let mut secret: [u64; 4] = [0; 4];
     let mut i: usize = 0;
 
     while i < secret.len() {
         let mut ok: bool = false;
+        let mut rng = WyRandLegacy::new(seed);
 
         while !ok {
             secret[i] = 0;
@@ -62,8 +63,7 @@ pub(super) const fn make_secret_legacy(mut seed: u64) -> LegacySecret {
 
             while j < 64 {
                 // WyRand... but const!
-                let (value, new_state) = WyRandLegacy::gen_u64(seed);
-                seed = new_state;
+                let value = rng.rand();
                 let random_index = (value as usize) % C_VALUES.len();
                 secret[i] |= (C_VALUES[random_index] as u64) << j;
                 j += 8;

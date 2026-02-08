@@ -1,9 +1,11 @@
+#[cfg(feature = "rand_core")]
+use core::convert::Infallible;
 #[cfg(feature = "debug")]
 use core::fmt::Debug;
 
 use super::constants::{WY0, WY1};
 #[cfg(feature = "rand_core")]
-use rand_core::{impls::fill_bytes_via_next, RngCore, SeedableRng, TryRngCore};
+use rand_core::{Rng, SeedableRng, TryRng};
 
 use crate::utils::wymix;
 #[cfg(feature = "serde1")]
@@ -31,7 +33,7 @@ impl WyRand {
 
     /// Generates a random [`u64`] value and advances the PRNG state.
     #[inline]
-    pub fn rand(&mut self) -> u64 {
+    pub const fn rand(&mut self) -> u64 {
         let (value, state) = Self::gen_u64(self.state);
         self.state = state;
         value
@@ -39,19 +41,8 @@ impl WyRand {
 
     /// Const [`WyRand`] generator. Generates and returns a random [`u64`] value first
     /// and then the advanced state second.
-    /// ```
-    /// use wyrand::WyRand;
-    ///
-    /// let seed = 123;
-    ///
-    /// let (random_value, new_state) = WyRand::gen_u64(seed);
-    ///
-    /// assert_ne!(random_value, 0);
-    /// // The original seed now no longer matches the new state.
-    /// assert_ne!(new_state, seed);
-    /// ```
     #[inline(always)]
-    pub const fn gen_u64(mut seed: u64) -> (u64, u64) {
+    const fn gen_u64(mut seed: u64) -> (u64, u64) {
         seed = seed.wrapping_add(WY0);
         (wymix(seed, seed ^ WY1), seed)
     }
@@ -65,20 +56,19 @@ impl Debug for WyRand {
 }
 
 #[cfg(feature = "rand_core")]
-impl RngCore for WyRand {
-    #[inline]
-    fn next_u32(&mut self) -> u32 {
-        self.rand() as u32
+impl TryRng for WyRand {
+    type Error = Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
+        Ok(self.rand() as u32)
     }
 
-    #[inline]
-    fn next_u64(&mut self) -> u64 {
-        self.rand()
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        Ok(self.rand())
     }
 
-    #[inline]
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        fill_bytes_via_next(self, dest);
+    fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {
+        rand_core::utils::fill_bytes_via_next_word(dst, || self.try_next_u64())
     }
 }
 
@@ -92,12 +82,12 @@ impl SeedableRng for WyRand {
     }
 
     #[inline]
-    fn from_rng(rng: &mut impl RngCore) -> Self {
+    fn from_rng<R: Rng + ?Sized>(rng: &mut R) -> Self {
         Self::new(rng.next_u64())
     }
 
     #[inline]
-    fn try_from_rng<R: TryRngCore>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         Ok(Self::new(rng.try_next_u64()?))
     }
 }
@@ -146,11 +136,11 @@ mod tests {
     #[cfg(feature = "rand_core")]
     #[test]
     fn rand_core_integration() {
-        fn rand_generic<R: RngCore>(mut r: R) -> u32 {
+        fn rand_generic<R: Rng>(mut r: R) -> u32 {
             r.next_u32()
         }
 
-        fn rand_dyn(r: &mut dyn RngCore) -> u32 {
+        fn rand_dyn(r: &mut dyn Rng) -> u32 {
             r.next_u32()
         }
 
