@@ -28,14 +28,14 @@ legacy_v4 = []
 
 [dependencies]
 getrandom = { version = "0.4.0", optional = true }
-rand = { version = "=0.10.0-rc.9", optional = true }
+rand = { version = "0.10.0", optional = true }
 rand_core = { version = "0.10.0", default-features = false, optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
 serde_test = "1.0"
-rand = "=0.10.0-rc.9"
+rand = "0.10.0"
 
 [[bench]]
 name = "rand_bench"
