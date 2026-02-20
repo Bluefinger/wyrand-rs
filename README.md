@@ -34,7 +34,7 @@ The crate will always export `WyRand` and will do so when set as `default-featur
 - **`debug`** - Enables `core::fmt::Debug` implementation for `WyRand`/`WyHash`.
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
 - **`hash`** - Enables `core::hash::Hash` implementation for `WyRand`.
-- **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4 C implementation.
+- **`wyhash`** - Enables `WyHash`, a fast & portable hashing algorithm. Based on the final v4.2 C implementation.
 - **`randomised_wyhash`** - Enables `RandomWyHashState`, a means to source a randomised state for `WyHash` for use in collections like `HashMap`/`HashSet`. Enables `wyhash` feature if it is not already enabled.
 - **`legacy_v4`** - Exposes the legacy PRNG/Hashing algorithms that use the final v4 implementation.
 
@@ -49,14 +49,7 @@ If you are using `WyRand` with `rand_core` and/or `WyHash` with `randomised_wyha
 
 ```toml
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-getrandom = { version = "0.3", features = ["wasm_js"] }
-```
-
-and then add the following to your project `.cargo/config.toml`:
-
-```toml
-[target.wasm32-unknown-unknown]
-rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
+getrandom = { version = "0.4", features = ["wasm_js"] }
 ```
 
 ## License
