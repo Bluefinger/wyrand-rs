@@ -16,7 +16,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "hash", derive(Hash))]
-#[repr(transparent)]
 pub struct WyRand {
     state: u64,
 }
@@ -25,6 +24,9 @@ impl WyRand {
     /// Creates a new [`WyRand`] instance with the provided seed. Be sure
     /// to obtain the seed value from a good entropy source, either from
     /// hardware, OS source, or from a suitable crate, like `getrandom`.
+    ///
+    /// If the seed value is known to be small/weak, then use `rand_core`'s
+    /// `SeedableRng::seed_from_u64` method instead.
     #[inline]
     #[must_use]
     pub const fn new(state: u64) -> Self {
@@ -33,18 +35,18 @@ impl WyRand {
 
     /// Generates a random [`u64`] value and advances the PRNG state.
     #[inline]
+    #[must_use]
     pub const fn rand(&mut self) -> u64 {
-        let (value, state) = Self::gen_u64(self.state);
-        self.state = state;
-        value
+        Self::gen_u64(&mut self.state)
     }
 
-    /// Const [`WyRand`] generator. Generates and returns a random [`u64`] value first
-    /// and then the advanced state second.
+    /// Const [`WyRand`] generator. Generates and returns a random [`u64`] value,
+    /// after advancing the state mutable reference.
     #[inline(always)]
-    const fn gen_u64(mut seed: u64) -> (u64, u64) {
-        seed = seed.wrapping_add(WY0);
-        (wymix(seed, seed ^ WY1), seed)
+    #[must_use]
+    const fn gen_u64(state: &mut u64) -> u64 {
+        *state = state.wrapping_add(WY0);
+        wymix(*state, *state ^ WY1)
     }
 }
 
@@ -59,14 +61,17 @@ impl Debug for WyRand {
 impl TryRng for WyRand {
     type Error = Infallible;
 
+    #[inline]
     fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
         Ok(self.rand() as u32)
     }
 
+    #[inline]
     fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
         Ok(self.rand())
     }
 
+    #[inline]
     fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {
         rand_core::utils::fill_bytes_via_next_word(dst, || self.try_next_u64())
     }
@@ -79,6 +84,13 @@ impl SeedableRng for WyRand {
     #[inline]
     fn from_seed(seed: Self::Seed) -> Self {
         Self::new(u64::from_ne_bytes(seed))
+    }
+
+    #[inline]
+    fn seed_from_u64(mut state: u64) -> Self {
+        Self {
+            state: Self::gen_u64(&mut state),
+        }
     }
 
     #[inline]
@@ -124,7 +136,7 @@ mod tests {
             "the two RNG instances are not the same after cloning"
         );
 
-        cloned.rand();
+        let _ = cloned.rand();
 
         // Should no longer have the same internal state after generating a random number
         assert_ne!(
@@ -163,7 +175,7 @@ mod tests {
     #[cfg(all(feature = "serde1", feature = "debug"))]
     #[test]
     fn serde_tokens() {
-        use serde_test::{assert_tokens, Token};
+        use serde_test::{Token, assert_tokens};
 
         let seed = 12345;
         let rng = WyRand::new(seed);
