@@ -11,7 +11,7 @@ The implementations for both the PRNG and hasher are based on the C reference im
 
 This crate provides both the v4.2 final implementation of the WyRand/WyHash algorithm, or the older final v4 implementation. The two versions have different outputs due to changes in the algorithm and also with the constants used. By default, the final v4.2 algorithm will be used. If one needs to use the older, legacy v4 implementation for compatibility/stability reasons, the legacy hasher and PRNG can be exposed by enabling the `legacy_v4` feature flag.
 
-This crate can be used on its own or be integrated with `rand_core`/`rand`, and it is `no-std` compatible. Minimum compatible Rust version is 1.70. This crate is also implemented with no unsafe code via `#![forbid(unsafe_code)]`.
+This crate can be used on its own or be integrated with `rand_core`/`rand`, and it is `no-std` compatible. Minimum compatible Rust version is 1.85.0. This crate is also implemented with no unsafe code via `#![forbid(unsafe_code)]`.
 
 ## Example
 
