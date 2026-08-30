@@ -10,7 +10,7 @@ use crate::{
 
 use super::{
     constants::{WY0, WY1, WY2, WY3},
-    secret::{make_secret_legacy, LegacySecret},
+    secret::{LegacySecret, make_secret_legacy},
 };
 
 /// The WyHash hasher, a fast & portable hashing algorithm. This implementation is
@@ -49,7 +49,7 @@ impl WyHashLegacy {
     /// Create suitable secret values to be used by the hasher.
     #[must_use]
     #[inline]
-    pub fn make_secret(seed: u64) -> LegacySecret {
+    pub const fn make_secret(seed: u64) -> LegacySecret {
         make_secret_legacy(seed)
     }
 
