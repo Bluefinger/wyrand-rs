@@ -1,6 +1,6 @@
 #[cfg(feature = "randomised_wyhash")]
 mod builder;
-mod constants;
+pub(crate) mod constants;
 #[cfg(feature = "wyhash")]
 mod hasher;
 #[cfg(feature = "wyhash")]

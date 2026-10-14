@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_main};
 
 fn wyrand_benchmark(c: &mut Criterion) {
     use rand_core::{Rng, SeedableRng};
@@ -33,6 +33,43 @@ fn wyrand_benchmark(c: &mut Criterion) {
     c.bench_function("from_rng", |b| {
         let mut source = WyRand::new(123456);
         b.iter(|| black_box(WyRand::from_rng(&mut source)))
+    });
+}
+
+#[cfg(feature = "asymmetric_rand")]
+fn wyranda_benchmark(c: &mut Criterion) {
+    use rand_core::{Rng, SeedableRng};
+    use wyrand::WyRandA;
+
+    c.bench_function("rand asymmetric", |b| {
+        let mut rng = WyRandA::new(123456);
+
+        b.iter(|| black_box(rng.rand()));
+    });
+
+    c.bench_function("next_64 asymmetric", |b| {
+        let mut rng = WyRandA::new(123456);
+
+        b.iter(|| black_box(rng.next_u64()));
+    });
+
+    c.bench_function("fill_bytes asymmetric", |b| {
+        let mut rng = WyRandA::new(123456);
+
+        let data = [0u8; 2048];
+
+        b.iter_batched_ref(
+            || data,
+            |data| {
+                rng.fill_bytes(data);
+            },
+            criterion::BatchSize::LargeInput,
+        )
+    });
+
+    c.bench_function("from_rng asymmetric", |b| {
+        let mut source = WyRandA::new(123456);
+        b.iter(|| black_box(WyRandA::from_rng(&mut source)))
     });
 }
 
@@ -128,6 +165,8 @@ pub fn benches() {
     let mut criterion: Criterion<_> = Criterion::default().configure_from_args();
 
     wyrand_benchmark(&mut criterion);
+    #[cfg(feature = "asymmetric_rand")]
+    wyranda_benchmark(&mut criterion);
     #[cfg(feature = "wyhash")]
     wyhash_benchmark(&mut criterion);
 }

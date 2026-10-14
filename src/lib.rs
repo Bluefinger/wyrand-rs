@@ -8,6 +8,8 @@
 #[cfg(feature = "fully_randomised_wyhash")]
 extern crate std;
 
+#[cfg(feature = "asymmetric_rand")]
+mod asymmetric;
 #[cfg(feature = "wyhash")]
 mod constants;
 mod final_v4_2;
@@ -21,4 +23,6 @@ pub mod legacy_final_v4;
 mod read;
 mod utils;
 
+#[cfg(feature = "asymmetric_rand")]
+pub use asymmetric::*;
 pub use final_v4_2::*;

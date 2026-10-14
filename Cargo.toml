@@ -1,6 +1,6 @@
 [package]
 name = "wyrand"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2024"
 authors = ["Gonçalo Rica Pais da Silva <bluefinger@gmail.com>"]
 description = "A fast & portable non-cryptographic pseudorandom number generator and hashing algorithm"
@@ -16,6 +16,7 @@ rust-version = "1.85.0"
 
 [features]
 debug = []
+asymmetric_rand = []
 default = ["rand_core", "debug"]
 hash = []
 rand_core = ["dep:rand_core"]
