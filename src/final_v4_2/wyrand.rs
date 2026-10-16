@@ -34,7 +34,7 @@ impl WyRand {
     }
 
     /// Generates a random [`u64`] value and advances the PRNG state.
-    #[inline]
+    #[inline(always)]
     #[must_use]
     pub const fn rand(&mut self) -> u64 {
         Self::gen_u64(&mut self.state)

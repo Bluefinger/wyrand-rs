@@ -30,6 +30,7 @@ let value = rng.rand();
 
 The crate will always export `WyRand` and will do so when set as `default-features = false` in the Cargo.toml. By default, it will have the `rand_core`, `debug` features enabled.
 
+- **`asymmetric_rand`** - Enables the `WyRandA` variant for a stronger RNG with the same performance as plain `WyRand`. Considered experimental, and thus is not enabled by default.
 - **`rand_core`** - Enables support for `rand_core`, implementing `RngCore` & `SeedableRng` on `WyRand`.
 - **`debug`** - Enables `core::fmt::Debug` implementation for `WyRand`/`WyHash`.
 - **`serde1`** - Enables `Serialize` and `Deserialize` derives on `WyRand`.
